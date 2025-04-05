@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	brokerReportFile = "broker_report.xlsx"
+	brokerReportFile = "../broker_report.xlsx"
 	listName         = "broker_rep"
 )
 
