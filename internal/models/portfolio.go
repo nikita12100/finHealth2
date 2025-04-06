@@ -1,5 +1,7 @@
 package models
 
 type Portfolio struct {
-	Operations []Operation
+	ChatId     int64       `json:"chat_id"`
+	Name       string      `json:"name"`
+	Operations []Operation `json:"operations"`
 }

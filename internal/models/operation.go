@@ -1,10 +1,10 @@
 package models
 
 type Operation struct {
-	IsBuy bool
-	Ticker string
-	Price float64
-	Count int
-	Currency string
-	Fee float32
+	IsBuy    bool    `json:"is_buy"`
+	Ticker   string  `json:"ticker"`
+	Price    float64 `json:"price"`
+	Count    int     `json:"count"`
+	Currency string  `json:"currency"`
+	Fee      float32 `json:"fee"`
 }

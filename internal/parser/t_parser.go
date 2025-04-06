@@ -48,6 +48,7 @@ func renameTicker(someTicker string) string {
 	return someTicker
 }
 
+// todo GMKN 100 -> 400
 func FetchOperations(rows [][]string) []Operation {
 	positions := calcPos(rows)
 

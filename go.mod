@@ -27,6 +27,7 @@ require (
 )
 
 require (
+	github.com/mattn/go-sqlite3 v1.14.27
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/richardlehane/mscfb v1.0.4 // indirect
 	github.com/richardlehane/msoleps v1.0.4 // indirect
@@ -37,4 +38,5 @@ require (
 	golang.org/x/oauth2 v0.28.0
 	golang.org/x/text v0.23.0 // indirect
 	google.golang.org/api v0.228.0
+	gopkg.in/telebot.v4 v4.0.0-beta.4
 )

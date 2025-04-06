@@ -2,42 +2,66 @@ package main
 
 import (
 	"log"
-	"test2/internal/common"
-	"test2/internal/parser"
-	"test2/internal/inserter"
+	"os"
+	"test2/internal/db"
+	"test2/internal/handlers"
+	"time"
 
-	"github.com/xuri/excelize/v2"
+	_ "github.com/mattn/go-sqlite3"
+	tele "gopkg.in/telebot.v4"
 )
 
 const (
-	brokerReportFile = "../broker_report.xlsx"
-	listName         = "broker_rep"
+	tokenName = "TG_TOKEN_FIN_HEALTH"
 )
 
 func main() {
-	f, err := excelize.OpenFile(brokerReportFile)
+	log.Println("Starting portfolio manager bot...")
+	db.InitTables()
+
+	pref := tele.Settings{
+		Token:  os.Getenv(tokenName),
+		Poller: &tele.LongPoller{Timeout: 10 * time.Second},
+	}
+	b, err := tele.NewBot(pref)
 	if err != nil {
 		log.Fatal(err)
-	}
-	defer f.Close()
-
-	rows, err := f.GetRows(listName)
-	if err != nil {
-		log.Fatal(err)
+		return
 	}
 
-	// Stats>
-	operations := parser.FetchOperations(rows)
-	count := parser.CalcCount(operations)
-	countSorted := common.Sort(parser.CalcCount(operations))
-	avgPrice := parser.CalcAvgPrice(operations)
-	// <Stats
+	b.Handle("/start", handleStartMsg)
+	b.Handle(&tele.Btn{Text: "📈 Статистика портфеля"}, handlers.StatsPortfolio)
+	b.Handle(&tele.Btn{Text: "📝 Обновить портфель"}, handlers.UpdatePortfolio)
 
-	// for k, v := range parser.CalcCount(operations) {
-	// 	fmt.Printf("%v: %v, avgPrice=%.3f\n", k, v, avgPrice[k])
-	// }
+	// b.Handle(&tele.Btn{Text: "😕 Confused"}, func(c tele.Context) error {
+	// 	inlineMenu := &tele.ReplyMarkup{}
+	// 	btnHelp := inlineMenu.Data("Get Help", "help_btn")
+	// 	inlineMenu.Inline(inlineMenu.Row(btnHelp))
 
-	inserter.InsertIntoSheet(count, avgPrice, countSorted)
+	// 	return c.Send(
+	// 		"Let me help you! Click below:",
+	// 		inlineMenu,
+	// 	)
+	// })
+
+	b.Start()
 }
 
-// GMKN 100 -> 400 todo
+func handleStartMsg(c tele.Context) error {
+	menu := &tele.ReplyMarkup{ResizeKeyboard: true}
+
+	btnPortfolioStats := menu.Text("📈 Статистика портфеля")
+	btnPortfolioUpdate := menu.Text("📝 Обновить портфель")
+	btnHelp := menu.Text("❓ Помощь")
+
+	menu.Reply(
+		menu.Row(btnPortfolioStats),
+		menu.Row(btnPortfolioUpdate),
+		menu.Row(btnHelp),
+	)
+
+	return c.Send(
+		"Привет, я умею ...\nВыберите действие:",
+		menu,
+	)
+}
