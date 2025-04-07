@@ -12,6 +12,7 @@ import (
 
 const (
 	spreadsheetID   = "1lsmGWP02TFzMesZQz99S5EPRIpSJvadyCl646fOxqbQ"
+	// writeRange      = "script_info_2!A2:H"
 	writeRange      = "script_info!A2:H"
 	credentialsFile = "../gcred.json"
 )

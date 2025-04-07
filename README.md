@@ -1,2 +1,5 @@
 # finHealth2
-v2 on go
+
+## TODO
+
+- fix GMKN 100 -> 400

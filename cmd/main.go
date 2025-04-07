@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"log/slog"
 	"os"
 	"test2/internal/db"
 	"test2/internal/handlers"
@@ -15,8 +16,24 @@ const (
 	tokenName = "TG_TOKEN_FIN_HEALTH"
 )
 
+func initLogger() {
+    textHandler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+        Level: slog.LevelDebug,
+        ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+            // Customize attribute display
+            if a.Key == slog.TimeKey {
+                return slog.Attr{} // Remove time for cleaner output
+            }
+            return a
+        },
+    })
+    slog.SetDefault(slog.New(textHandler))
+
+}
+
 func main() {
-	log.Println("Starting portfolio manager bot...")
+	initLogger()
+	slog.Info("Starting portfolio manager bot...")
 	db.InitTables()
 
 	pref := tele.Settings{
