@@ -17,17 +17,17 @@ const (
 )
 
 func initLogger() {
-    textHandler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-        Level: slog.LevelDebug,
-        ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-            // Customize attribute display
-            if a.Key == slog.TimeKey {
-                return slog.Attr{} // Remove time for cleaner output
-            }
-            return a
-        },
-    })
-    slog.SetDefault(slog.New(textHandler))
+	textHandler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			// Customize attribute display
+			if a.Key == slog.TimeKey {
+				return slog.Attr{} // Remove time for cleaner output
+			}
+			return a
+		},
+	})
+	slog.SetDefault(slog.New(textHandler))
 
 }
 
@@ -47,8 +47,8 @@ func main() {
 	}
 
 	b.Handle("/start", handleStartMsg)
-	b.Handle(&tele.Btn{Text: "📈 Статистика портфеля"}, handlers.StatsPortfolio)
-	b.Handle(&tele.Btn{Text: "📝 Обновить портфель"}, handlers.UpdatePortfolio)
+	b.Handle(&tele.Btn{Text: "📈 Статистика портфеля"}, handlers.HandleStatsPortfolio)
+	b.Handle(&tele.Btn{Text: "📝 Обновить портфель"}, handlers.HandleUpdatePortfolio)
 
 	// b.Handle(&tele.Btn{Text: "😕 Confused"}, func(c tele.Context) error {
 	// 	inlineMenu := &tele.ReplyMarkup{}

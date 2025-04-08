@@ -22,22 +22,20 @@ const (
 	listName              = "broker_rep"
 )
 
-func StatsPortfolio(c tele.Context) error {
+func HandleStatsPortfolio(c tele.Context) error {
 	portfolio, err := db.GetPortfolio(c.Chat().ID, "test_2")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Stats>
-	count := parser.CalcCount(portfolio.Operations)
-	countSorted := common.Sort(count)
-	avgPrice := parser.CalcAvgPrice(portfolio.Operations)
-	// <Stats
-	inserter.InsertIntoSheet(count, avgPrice, countSorted)
+	count := portfolio.GetCountPerTicker()
+	avgPrice := portfolio.GetAvgBuyPricePerTicker()
+
+	inserter.InsertIntoSheet(count, avgPrice)
 	return c.Send("Данные загружены в таблицу")
 }
 
-func UpdatePortfolio(c tele.Context) error {
+func HandleUpdatePortfolio(c tele.Context) error {
 	var resPortfolio models.Portfolio
 
 	fileOperations23 := fetchFromFile(brokerReportFile23)

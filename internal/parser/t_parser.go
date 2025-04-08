@@ -105,34 +105,6 @@ func parseDateTime(timeStr string) (time.Time, error) {
 	return parsedTime, nil
 }
 
-func CalcCount(operations []Operation) map[string]int {
-	countMap := make(map[string]int)
-	for _, operation := range operations {
-		if operation.IsBuy {
-			countMap[operation.Ticker] += operation.Count
-		} else {
-			countMap[operation.Ticker] -= operation.Count
-		}
-	}
-	return countMap
-}
-
-func CalcAvgPrice(operations []Operation) map[string]float64 {
-	sumPrice := make(map[string]float64)
-	avgCount := make(map[string]int)
-	for _, operation := range operations {
-		if operation.IsBuy {
-			sumPrice[operation.Ticker] += operation.Price * float64(operation.Count)
-			avgCount[operation.Ticker] += operation.Count
-		}
-	}
-	avgPrice := make(map[string]float64)
-	for ticker, sumPrice := range sumPrice {
-		avgPrice[ticker] = sumPrice / float64(avgCount[ticker])
-	}
-	return avgPrice
-}
-
 func removeFixPrefix(input string) string {
 	if strings.HasPrefix(input, "FIX") {
 		return strings.TrimPrefix(input, "FIX")
