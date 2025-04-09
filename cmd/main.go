@@ -49,17 +49,7 @@ func main() {
 	b.Handle("/start", handleStartMsg)
 	b.Handle(&tele.Btn{Text: "📈 Статистика портфеля"}, handlers.HandleStatsPortfolio)
 	b.Handle(&tele.Btn{Text: "📝 Обновить портфель"}, handlers.HandleUpdatePortfolio)
-
-	// b.Handle(&tele.Btn{Text: "😕 Confused"}, func(c tele.Context) error {
-	// 	inlineMenu := &tele.ReplyMarkup{}
-	// 	btnHelp := inlineMenu.Data("Get Help", "help_btn")
-	// 	inlineMenu.Inline(inlineMenu.Row(btnHelp))
-
-	// 	return c.Send(
-	// 		"Let me help you! Click below:",
-	// 		inlineMenu,
-	// 	)
-	// })
+	b.Handle(tele.OnDocument, handlers.HandleBrockerReportFile)
 
 	b.Start()
 }

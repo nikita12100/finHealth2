@@ -1,13 +1,14 @@
-package parser
+package fetcher
 
 import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 )
 
-func getTickerByISIN(isin string) (string, error) {
+func GetTickerByISIN(isin string) (string, error) {
 	resp, err := http.Get(fmt.Sprintf("https://iss.moex.com/iss/securities.json?q=%s", isin))
 	if err != nil {
 		return "", err
@@ -36,7 +37,13 @@ func getTickerByISIN(isin string) (string, error) {
 	return "", fmt.Errorf("ticker not found")
 }
 
-// fetch currency from FACEUNIT
+func removeFixPrefix(input string) string {
+	if strings.HasPrefix(input, "FIX") {
+		return strings.TrimPrefix(input, "FIX")
+	}
+	return input
+}
+
 func GetLastPriceBond(ticker string) (float64, float64, float64, float64, string, error) {
 	resp, err := http.Get(fmt.Sprintf("https://iss.moex.com/iss/engines/stock/markets/bonds/securities/%s.json", ticker))
 	if err != nil {

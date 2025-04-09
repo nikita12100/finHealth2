@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"test2/internal/fetcher"
 	. "test2/internal/models"
 	"time"
 
@@ -50,7 +51,7 @@ func renameTicker(someTicker string) string {
 	prefixPattern := `^[A-Z]{2}[0-9]{2}`
 	re := regexp.MustCompile(prefixPattern) // todo check if it is share
 	if re.MatchString(someTicker) {
-		if rename, err := getTickerByISIN(someTicker); err == nil {
+		if rename, err := fetcher.GetTickerByISIN(someTicker); err == nil {
 			return rename
 		} else {
 			slog.Error("Got error from moex, ticker=%v, error:", someTicker, err)
@@ -103,11 +104,4 @@ func parseDateTime(timeStr string) (time.Time, error) {
 	}
 
 	return parsedTime, nil
-}
-
-func removeFixPrefix(input string) string {
-	if strings.HasPrefix(input, "FIX") {
-		return strings.TrimPrefix(input, "FIX")
-	}
-	return input
 }

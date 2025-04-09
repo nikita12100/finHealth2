@@ -3,7 +3,12 @@ package handlers
 import (
 	// "database/sql"
 	// "errors"
+	"database/sql"
+	"errors"
+	"fmt"
+	"io"
 	"log"
+	"log/slog"
 	"test2/internal/common"
 	"test2/internal/db"
 	"test2/internal/inserter"
@@ -23,7 +28,7 @@ const (
 )
 
 func HandleStatsPortfolio(c tele.Context) error {
-	portfolio, err := db.GetPortfolio(c.Chat().ID, "test_2")
+	portfolio, err := db.GetPortfolio(c.Chat().ID, "test")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -36,48 +41,11 @@ func HandleStatsPortfolio(c tele.Context) error {
 }
 
 func HandleUpdatePortfolio(c tele.Context) error {
-	var resPortfolio models.Portfolio
-
-	fileOperations23 := fetchFromFile(brokerReportFile23)
-	fileOperations24 := fetchFromFile(brokerReportFile24)
-	fileOperations25 := fetchFromFile(brokerReportFile25)
-	resPortfolio = models.Portfolio{
-		ChatId:     c.Chat().ID,
-		Name:       "test_2",
-		Operations: common.UnionOperation(common.UnionOperation(fileOperations23, fileOperations24), fileOperations25),
-	}
-	// optPortfolio, err := db.GetPortfolio(c.Chat().ID, "test_2") // how handle error
-	// if err != nil {
-	// 	if errors.Is(err, sql.ErrNoRows) {
-	// 		// Portfolio not found - use default
-	// 		resPortfolio = models.Portfolio{
-	// 			ChatId:     c.Chat().ID,
-	// 			Name:       "test_2",
-	// 			Operations: fileOperations,
-	// 		}
-	// 	} else {
-	// 		log.Printf("Error getting portfolio: %v", err)
-	// 		return err
-	// 	}
-	// } else {
-	// 	resPortfolio = models.Portfolio{
-	// 		ChatId:     c.Chat().ID,
-	// 		Name:       "test_2",
-	// 		Operations: common.UnionOperation(optPortfolio.Operations, fileOperations),
-	// 	}
-	// }
-
-	err := db.SavePortfolio(resPortfolio)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println("Portfolio saved successfully")
-
-	return c.Send("Отчет успешно загружен из файла и сохранен")
+	return c.Send("Загрузите отчет формата .xlsx ...")
 }
 
-func fetchFromFile(fileName string) []models.Operation {
-	f, err := excelize.OpenFile(fileName)
+func fetchFromBuf(buf io.Reader) []models.Operation {
+	f, err := excelize.OpenReader(buf)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -89,4 +57,55 @@ func fetchFromFile(fileName string) []models.Operation {
 	}
 
 	return parser.FetchOperations(rows)
+}
+
+func HandleBrockerReportFile(c tele.Context) error {
+	file := c.Message().Document
+	slog.Info("Got file", "name", file.FileName, "size(KB)", file.FileSize/1024)
+
+	if file.FileName[len(file.FileName)-5:] != ".xlsx" {
+		return c.Send("Неправильный тип файла, поддерживаемый тип .xlsx")
+	}
+
+	reader, err := c.Bot().File(&file.File)
+	if err != nil {
+		slog.Warn("Failed to download file")
+		return c.Send("Failed to download file: " + err.Error())
+	}
+	defer reader.Close()
+	// FILE DONE 
+	operations := fetchFromBuf(reader)
+	// PARSE DONE
+	var resPortfolio models.Portfolio
+
+	optPortfolio, err := db.GetPortfolio(c.Chat().ID, "test")
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			// Portfolio not found - use default
+			resPortfolio = models.Portfolio{
+				ChatId:     c.Chat().ID,
+				Name:       "test",
+				Operations: operations,
+			}
+		} else {
+			slog.Error("Error getting portfolio", err)
+			return err
+		}
+	} else {
+		resPortfolio = models.Portfolio{
+			ChatId:     c.Chat().ID,
+			Name:       "test",
+			Operations: common.UnionOperation(optPortfolio.Operations, operations),
+		}
+	}
+
+	err = db.SavePortfolio(resPortfolio)
+	if err != nil {
+		log.Fatal(err)
+	}
+	slog.Info("Portfolio saved successfully")
+
+	c.Send("Отчет успешно загружен из файла и сохранен")
+
+	return c.Send(fmt.Sprintf("res_len=%v", len(operations)))
 }
