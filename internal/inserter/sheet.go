@@ -34,6 +34,9 @@ func InsertIntoSheet(count map[string]int, avgPrice map[string]float64) {
 		if count[key] == 0 {
 			continue
 		}
+		if len(key)> 5 && key[len(key)-4:] == "_TOM" {
+			continue
+		}
 		if models.IsBond(key) {
 			ticker := key
 			count := count[ticker]
@@ -53,7 +56,7 @@ func InsertIntoSheet(count map[string]int, avgPrice map[string]float64) {
 			coup2025 := float64(count) * couponValue * float64(couponPeriodPerYear)
 
 			valuesBonds = append(valuesBonds, []interface{}{ticker, count, avgPriceBuy * faceValue, lastPrice * faceValue, couponValue, "nkd", couponPeriodPerYear, float64(count) * lastPrice * faceValue, coup2025})
-		} else {
+		} else if models.IsShare(key) {
 			ticker := key
 			lastPrice, _ := parser.GetLastPriceShare(ticker)
 			count := count[ticker]
@@ -61,7 +64,7 @@ func InsertIntoSheet(count map[string]int, avgPrice map[string]float64) {
 			weight := fmt.Sprintf("%.2f", currSum/WEIGHT_NORM)
 			avgPriceBuy := fmt.Sprintf("%.2f", avgPrice[ticker])
 			div, _ := parser.GetDivYield(ticker)
-			sumDiv := fmt.Sprintf("%.2f", div*float64(count))
+			sumDiv := div*float64(count)
 			divPerc := (div / avgPrice[ticker]) * 100
 
 			valuesShares = append(valuesShares, []interface{}{ticker, weight, count, avgPriceBuy, lastPrice, div, currSum, sumDiv, divPerc})
