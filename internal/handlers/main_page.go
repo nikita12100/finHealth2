@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	// "database/sql"
-	// "errors"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -20,11 +18,7 @@ import (
 )
 
 const (
-	brokerReportFile23    = "../2023.xlsx"
-	brokerReportFile24    = "../2024.xlsx"
-	brokerReportFile25    = "../2025.xlsx"
-	brokerReportFile23_24 = "../broker_report.xlsx"
-	listName              = "broker_rep"
+	listName = "broker_rep"
 )
 
 func HandleStatsPortfolio(c tele.Context) error {
@@ -73,7 +67,7 @@ func HandleBrockerReportFile(c tele.Context) error {
 		return c.Send("Failed to download file: " + err.Error())
 	}
 	defer reader.Close()
-	// FILE DONE 
+	// FILE DONE
 	operations := fetchFromBuf(reader)
 	// PARSE DONE
 	var resPortfolio models.Portfolio
