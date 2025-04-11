@@ -42,25 +42,25 @@ func InsertIntoSheet(count map[string]int, avgPrice map[string]float64) {
 			ticker := key
 			count := count[ticker]
 			avgPriceBuy := avgPrice[ticker] / 100
-			couponValue, lastPrice, faceValue, couponPeriod, faceUnit, _ := fetcher.GetLastPriceBond(ticker)
-			if faceUnit == "USD" {
-				lastPrice = lastPrice * 100
+			bondInfo, _ := fetcher.GetLastPriceBondCached(ticker)
+			if bondInfo.FaceUnit == "USD" {
+				bondInfo.LastPrice = bondInfo.LastPrice * 100
 				avgPriceBuy = avgPriceBuy * 100
 			}
 			var couponPeriodPerYear int
-			if couponPeriod != 0.0 {
-				couponPeriodPerYear = int(365.0 / couponPeriod)
+			if bondInfo.CouponPeriod != 0.0 {
+				couponPeriodPerYear = int(365.0 / bondInfo.CouponPeriod)
 			} else {
 				couponPeriodPerYear = 0
 			}
-			lastPrice = lastPrice / 100
-			coup2025 := float64(count) * couponValue * float64(couponPeriodPerYear)
-			if couponValue == 0.0 && lastPrice == 0.0 && faceValue == 0.0 {
+			bondInfo.LastPrice = bondInfo.LastPrice / 100
+			coup2025 := float64(count) * bondInfo.CouponValue * float64(couponPeriodPerYear)
+			if bondInfo.CouponValue == 0.0 && bondInfo.LastPrice == 0.0 && bondInfo.FaceValue == 0.0 {
 				slog.Warn("Skip bond in case of potintial expire", "bond", ticker)
 				continue
 			}
 
-			valuesBonds = append(valuesBonds, []interface{}{ticker, count, avgPriceBuy * faceValue, lastPrice * faceValue, couponValue, "nkd", couponPeriodPerYear, float64(count) * lastPrice * faceValue, coup2025})
+			valuesBonds = append(valuesBonds, []interface{}{ticker, count, avgPriceBuy * bondInfo.FaceValue, bondInfo.LastPrice * bondInfo.FaceValue, bondInfo.CouponValue, "nkd", couponPeriodPerYear, float64(count) * bondInfo.LastPrice * bondInfo.FaceValue, coup2025})
 		} else if models.IsShare(key) {
 			ticker := key
 			lastPrice, _ := fetcher.GetLastPriceShare(ticker)
@@ -68,7 +68,7 @@ func InsertIntoSheet(count map[string]int, avgPrice map[string]float64) {
 			currSum := lastPrice * float64(count)
 			weight := fmt.Sprintf("%.2f", currSum/WEIGHT_NORM)
 			avgPriceBuy := fmt.Sprintf("%.2f", avgPrice[ticker])
-			div, _ := fetcher.GetDivYield(ticker)
+			div, _ := fetcher.GetDivYieldCached(ticker)
 			sumDiv := div*float64(count)
 			divPerc := (div / avgPrice[ticker]) * 100
 

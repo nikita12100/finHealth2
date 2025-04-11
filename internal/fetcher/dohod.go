@@ -8,9 +8,33 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"test2/internal/db"
+	"time"
 )
 
-func GetDivYield(ticker string) (float64, error) {
+const (
+	ttlDohod = 1 * time.Hour
+)
+
+func GetDivYieldCached(ticker string) (float64, error) {
+	if entry, err := db.GetCacheDohod(ticker); err == nil {
+		if time.Since(entry.Created) < ttlDohod {
+			slog.Debug("Used cache GetDivYieldCached")
+			return entry.Value, nil
+		}
+	}
+
+	value, _ := getDivYield(ticker)
+
+	db.SaveCacheDohod(ticker, db.CacheDohod{
+		Value:   value,
+		Created: time.Now(),
+	})
+
+	return value, nil
+}
+
+func getDivYield(ticker string) (float64, error) {
 	resp, err := http.Get(fmt.Sprintf("https://www.dohod.ru/ik/analytics/dividend/%v", strings.ToLower(ticker)))
 	if err != nil {
 		slog.Error("Error fetching GetDivYield URL.", ticker, err)

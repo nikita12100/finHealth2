@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"test2/internal/common"
 	"test2/internal/db"
+	"test2/internal/fetcher"
 	"test2/internal/inserter"
 	"test2/internal/models"
 	"test2/internal/parser"
@@ -53,53 +54,85 @@ func fetchFromBuf(buf io.Reader) []models.Operation {
 	return parser.FetchOperations(rows)
 }
 
-func HandleBrockerReportFile(c tele.Context) error {
+func fetchFileData(c tele.Context) ([]models.Operation, error) {
 	file := c.Message().Document
 	slog.Info("Got file", "name", file.FileName, "size(KB)", file.FileSize/1024)
 
 	if file.FileName[len(file.FileName)-5:] != ".xlsx" {
-		return c.Send("Неправильный тип файла, поддерживаемый тип .xlsx")
+		return nil, fmt.Errorf("неправильный тип файла, поддерживаемый тип .xlsx")
 	}
 
 	reader, err := c.Bot().File(&file.File)
 	if err != nil {
 		slog.Warn("Failed to download file")
-		return c.Send("Failed to download file: " + err.Error())
+		return nil, fmt.Errorf("ошибка скачивания: %v", err.Error())
 	}
 	defer reader.Close()
-	// FILE DONE
-	operations := fetchFromBuf(reader)
-	// PARSE DONE
-	var resPortfolio models.Portfolio
 
-	optPortfolio, err := db.GetPortfolio(c.Chat().ID, "test")
+	return fetchFromBuf(reader), nil
+}
+
+func HandleBrockerReportFile(c tele.Context) error {
+	newOperations, err := fetchFileData(c)
+	if err != nil {
+		c.Send(err)
+	}
+
+	var resOperations []models.Operation
+	optOldPortfolio, err := db.GetPortfolio(c.Chat().ID, "test")
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			// Portfolio not found - use default
-			resPortfolio = models.Portfolio{
-				ChatId:     c.Chat().ID,
-				Name:       "test",
-				Operations: operations,
-			}
+			resOperations = newOperations
 		} else {
-			slog.Error("Error getting portfolio", err)
+			slog.Error("Error getting portfolio", "error", err)
 			return err
 		}
 	} else {
-		resPortfolio = models.Portfolio{
-			ChatId:     c.Chat().ID,
-			Name:       "test",
-			Operations: common.UnionOperation(optPortfolio.Operations, operations),
-		}
+		resOperations = common.UnionOperation(optOldPortfolio.Operations, newOperations)
 	}
 
-	err = db.SavePortfolio(resPortfolio)
+	err = db.SavePortfolio(models.Portfolio{
+		ChatId:     c.Chat().ID,
+		Name:       "test",
+		Operations: resOperations,
+	})
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Failed save portfolio", "error", err)
 	}
 	slog.Info("Portfolio saved successfully")
 
 	c.Send("Отчет успешно загружен из файла и сохранен")
 
-	return c.Send(fmt.Sprintf("res_len=%v", len(operations)))
+	return c.Send(printDiffReport(newOperations), tele.ModeMarkdown)
+}
+
+func printDiffReport(operations []models.Operation) string {
+	sumPrice := make(map[string]float64)
+	countPerTicker := make(map[string]int)
+	for _, operation := range operations {
+		if operation.IsBuy {
+			sumPrice[operation.Ticker] += operation.Price * float64(operation.Count)
+			countPerTicker[operation.Ticker] += operation.Count
+		} else {
+			sumPrice[operation.Ticker] -= operation.Price * float64(operation.Count)
+			countPerTicker[operation.Ticker] -= operation.Count
+		}
+	}
+
+	sum := 0.0
+	divSum := 0.0
+	for ticker, sumPrice := range sumPrice {
+		sum += sumPrice
+		div, _ := fetcher.GetDivYieldCached(ticker) // прогноз на след 12мес.
+		divSum += (div * float64(countPerTicker[ticker]) / 12.0)
+	}
+
+	report := "Отчет:\n"
+	for ticker, count := range countPerTicker {
+		report += fmt.Sprintf("*%v* +%v шт. на %.1f\n", ticker, count, sumPrice[ticker])
+	}
+	report += fmt.Sprintf("\nсуммарно куплено на %.0fр.\n", sum)
+	report += fmt.Sprintf("\nпассивнй доход в месяц +%.2f\n", divSum)
+
+	return report
 }

@@ -9,7 +9,7 @@ import (
 
 func SavePortfolio(p models.Portfolio) error {
 	log.Printf("SavePortfolio chatId=%v...\n", p.ChatId)
-	db, err := sql.Open("sqlite3", dbName)
+	db, err := sql.Open("sqlite3", dbPortfolio)
 	if err != nil {
 		return err
 	}
@@ -29,10 +29,9 @@ func SavePortfolio(p models.Portfolio) error {
 	return err
 }
 
-
 func GetPortfolio(chatId int64, name string) (models.Portfolio, error) {
 	log.Printf("GetPortfolio chatId=%v...\n", chatId)
-	db, _ := sql.Open("sqlite3", dbName)
+	db, _ := sql.Open("sqlite3", dbPortfolio)
 
 	var p models.Portfolio
 	var operationsJSON []byte

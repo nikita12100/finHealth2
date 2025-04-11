@@ -51,7 +51,7 @@ func renameTicker(someTicker string) string {
 	prefixPattern := `^[A-Z]{2}[0-9]{2}`
 	re := regexp.MustCompile(prefixPattern) // todo check if it is share
 	if re.MatchString(someTicker) {
-		if rename, err := fetcher.GetTickerByISIN(someTicker); err == nil {
+		if rename, err := fetcher.GetTickerByISINCached(someTicker); err == nil {
 			return rename
 		} else {
 			slog.Error("Got error from moex, ticker=%v, error:", someTicker, err)
