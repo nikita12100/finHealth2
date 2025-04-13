@@ -2,11 +2,9 @@ package inserter
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"log/slog"
 	"test2/internal/common"
-	"test2/internal/fetcher"
 	"test2/internal/models"
 
 	"google.golang.org/api/option"
@@ -18,10 +16,9 @@ const (
 	writeRangeShare = "script_share!A2:I"
 	writeRangeBond  = "script_bond!A2:I"
 	credentialsFile = "../gcred.json"
-	WEIGHT_NORM     = 60000.0
 )
 
-func InsertIntoSheet(count map[string]int, avgPrice map[string]float64) {
+func InsertIntoSheet(statsShare map[string]models.StatsShare, statsBond map[string]models.StatsBond) {
 	ctx := context.Background()
 	srv, err := sheets.NewService(ctx, option.WithCredentialsFile(credentialsFile))
 	if err != nil {
@@ -30,49 +27,43 @@ func InsertIntoSheet(count map[string]int, avgPrice map[string]float64) {
 
 	var valuesBonds [][]interface{}
 	var valuesShares [][]interface{}
-	countSorted := common.Sort(count)
-	for _, key := range countSorted {
-		if count[key] == 0 {
+	countSorted := common.SortKey(statsShare)
+	for _, ticker := range countSorted {
+		if statsShare[ticker].Count == 0 {
 			continue
 		}
-		if len(key)> 5 && key[len(key)-4:] == "_TOM" {
+		if models.IsCurrency(ticker) {
 			continue
 		}
-		if models.IsBond(key) {
-			ticker := key
-			count := count[ticker]
-			avgPriceBuy := avgPrice[ticker] / 100
-			bondInfo, _ := fetcher.GetLastPriceBondCached(ticker)
-			if bondInfo.FaceUnit == "USD" {
-				bondInfo.LastPrice = bondInfo.LastPrice * 100
-				avgPriceBuy = avgPriceBuy * 100
-			}
-			var couponPeriodPerYear int
-			if bondInfo.CouponPeriod != 0.0 {
-				couponPeriodPerYear = int(365.0 / bondInfo.CouponPeriod)
-			} else {
-				couponPeriodPerYear = 0
-			}
-			bondInfo.LastPrice = bondInfo.LastPrice / 100
-			coup2025 := float64(count) * bondInfo.CouponValue * float64(couponPeriodPerYear)
-			if bondInfo.CouponValue == 0.0 && bondInfo.LastPrice == 0.0 && bondInfo.FaceValue == 0.0 {
+		if models.IsBond(ticker) {
+			if statsBond[ticker].CouponValue == 0.0 && statsBond[ticker].LastPrice == 0.0 && statsBond[ticker].AvgPriceBuy == 0.0 {
 				slog.Warn("Skip bond in case of potintial expire", "bond", ticker)
 				continue
 			}
 
-			valuesBonds = append(valuesBonds, []interface{}{ticker, count, avgPriceBuy * bondInfo.FaceValue, bondInfo.LastPrice * bondInfo.FaceValue, bondInfo.CouponValue, "nkd", couponPeriodPerYear, float64(count) * bondInfo.LastPrice * bondInfo.FaceValue, coup2025})
-		} else if models.IsShare(key) {
-			ticker := key
-			lastPrice, _ := fetcher.GetLastPriceShare(ticker)
-			count := count[ticker]
-			currSum := lastPrice * float64(count)
-			weight := fmt.Sprintf("%.2f", currSum/WEIGHT_NORM)
-			avgPriceBuy := fmt.Sprintf("%.2f", avgPrice[ticker])
-			div, _ := fetcher.GetDivYieldCached(ticker)
-			sumDiv := div*float64(count)
-			divPerc := (div / avgPrice[ticker]) * 100
-
-			valuesShares = append(valuesShares, []interface{}{ticker, weight, count, avgPriceBuy, lastPrice, div, currSum, sumDiv, divPerc})
+			valuesBonds = append(valuesBonds, []interface{}{
+				ticker,
+				statsBond[ticker].Count,
+				statsBond[ticker].AvgPriceBuy,
+				statsBond[ticker].LastPrice,
+				statsBond[ticker].CouponValue,
+				"nkd",
+				statsBond[ticker].CouponPeriodPerYear,
+				statsBond[ticker].SumPriceTotal,
+				statsBond[ticker].Coup2025,
+			})
+		} else if models.IsShare(ticker) {
+			valuesShares = append(valuesShares, []interface{}{
+				ticker,
+				statsShare[ticker].Weight,
+				statsShare[ticker].Count,
+				statsShare[ticker].AvgPriceBuy,
+				statsShare[ticker].LastPrice,
+				statsShare[ticker].Div,
+				statsShare[ticker].SumPriceTotal,
+				statsShare[ticker].SumDiv,
+				statsShare[ticker].DivPerc,
+			})
 		}
 	}
 

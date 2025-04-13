@@ -3,7 +3,6 @@ package db
 import (
 	"database/sql"
 	"encoding/json"
-	"log/slog"
 	"test2/internal/models"
 	"time"
 )
@@ -24,7 +23,6 @@ type CacheMoexStock struct {
 }
 
 func SaveCacheDohod(ticker string, cache CacheDohod) error {
-	slog.Debug("SavingCacheDohod...")
 	db, err := sql.Open("sqlite3", dbCache)
 	if err != nil {
 		return err
@@ -46,7 +44,6 @@ func SaveCacheDohod(ticker string, cache CacheDohod) error {
 }
 
 func SaveCacheMoexIsin(isin string, cache CacheMoexIsin) error {
-	slog.Debug("SaveCacheMoexIsin...")
 	db, err := sql.Open("sqlite3", dbCache)
 	if err != nil {
 		return err
@@ -68,7 +65,6 @@ func SaveCacheMoexIsin(isin string, cache CacheMoexIsin) error {
 }
 
 func SaveCacheMoexStock(ticker string, cache CacheMoexStock) error {
-	slog.Debug("SaveCacheMoexStock...")
 	db, err := sql.Open("sqlite3", dbCache)
 	if err != nil {
 		return err
@@ -90,7 +86,6 @@ func SaveCacheMoexStock(ticker string, cache CacheMoexStock) error {
 }
 
 func GetCacheDohod(ticker string) (CacheDohod, error) {
-	slog.Debug("GetCacheDohod...")
 	db, _ := sql.Open("sqlite3", dbCache)
 
 	var cache CacheDohod
@@ -113,7 +108,6 @@ func GetCacheDohod(ticker string) (CacheDohod, error) {
 }
 
 func GetCacheMoexIsin(isin string) (CacheMoexIsin, error) {
-	slog.Debug("GetCacheMoexIsin...")
 	db, _ := sql.Open("sqlite3", dbCache)
 
 	var cache CacheMoexIsin
@@ -136,7 +130,6 @@ func GetCacheMoexIsin(isin string) (CacheMoexIsin, error) {
 }
 
 func GetCacheMoexStock(ticker string) (CacheMoexStock, error) {
-	slog.Debug("GetCacheMoexStock...")
 	db, _ := sql.Open("sqlite3", dbCache)
 
 	var cache CacheMoexStock

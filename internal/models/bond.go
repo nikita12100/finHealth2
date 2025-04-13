@@ -19,3 +19,7 @@ func IsBond(ticker string) bool {
 	re := regexp.MustCompile(prefixPattern)
 	return re.MatchString(ticker)
 }
+
+func IsCurrency(ticker string) bool {
+	return len(ticker) > 5 && ticker[len(ticker)-4:] == "_TOM"
+}

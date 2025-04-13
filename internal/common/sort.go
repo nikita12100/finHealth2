@@ -6,10 +6,10 @@ import (
 	"test2/internal/models"
 )
 
-func Sort(m map[string]int) []string {
+func SortKey[T comparable](m map[string]T) []string {
 	type kv struct {
 		Key   string
-		Value int
+		Value T
 	}
 
 	var ss []kv
@@ -26,6 +26,47 @@ func Sort(m map[string]int) []string {
 		sortedK = append(sortedK, kv.Key)
 	}
 	return sortedK
+}
+
+func SortValue[T any](m map[string]T, compare func(i, j T) bool) []struct {
+	Key   string
+	Value T
+} {
+	var ss []struct {
+		Key   string
+		Value T
+	}
+	for k, v := range m {
+		ss = append(ss, struct {
+			Key   string
+			Value T
+		}{k, v})
+	}
+
+	sort.Slice(ss, func(i, j int) bool {
+		return compare(ss[i].Value, ss[j].Value)
+	})
+	return ss
+}
+
+func FilterValue[T any](m map[string]T, condition func(T) bool) map[string]T {
+	result := make(map[string]T)
+	for key, value := range m {
+		if condition(value) {
+			result[key] = value
+		}
+	}
+	return result
+}
+
+func FilterKey(m map[string]int, condition func(string) bool) map[string]int {
+	result := make(map[string]int)
+	for key, value := range m {
+		if condition(key) {
+			result[key] = value
+		}
+	}
+	return result
 }
 
 func UnionOperation(a, b []models.Operation) []models.Operation {

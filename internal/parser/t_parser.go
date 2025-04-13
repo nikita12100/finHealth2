@@ -72,19 +72,16 @@ func FetchOperations(rows [][]string) []Operation {
 		operation.NoTransaction = rows[i][0]
 		operation.IsBuy = strings.Contains(rows[i][6], "Покупка")
 
-		////
-		// prefixPattern := `^[A-Z]{2}[0-9]{2}`
-		// re := regexp.MustCompile(prefixPattern)
 		if !strings.Contains(rows[i][10], "%") {
 			operation.Ticker = renameTicker(rows[i][8])
 		} else {
 			operation.Ticker = rows[i][8]
 		}
-		////
-		operation.Price, _ = strconv.ParseFloat(rows[i][9], 64)
-		operation.Count, _ = strconv.Atoi(rows[i][11])
+
 		operation.Currency = rows[i][10]
 		operation.Date, _ = parseDateTime(rows[i][3] + "T" + rows[i][4])
+		operation.Price = parsePrice(rows[i][9], operation.Ticker, operation.Date)
+		operation.Count = parseCount(rows[i][11], operation.Ticker, operation.Date)
 
 		if operation.Ticker != "" {
 			operations = append(operations, operation)
@@ -92,6 +89,33 @@ func FetchOperations(rows [][]string) []Operation {
 	}
 
 	return operations
+}
+
+
+func parsePrice(priceS string, ticker string, date time.Time) float64 { // fix не работает почему-то
+	price, _ := strconv.ParseFloat(priceS, 64)
+	gmknFragmentation, _ := time.Parse("02.01.2006", "04.04.2024")
+	if ticker == "GMKN" && date.Before(gmknFragmentation) {
+		price /= 100
+	}
+	plzlFragmentation, _ := time.Parse("02.01.2006", "25.03.2025")
+	if ticker == "PLZL" && date.Before(plzlFragmentation) {
+		price /= 10
+	}
+	return price
+}
+
+func parseCount(countS string, ticker string, date time.Time) int { // fix не работает почему-то
+	count, _ := strconv.Atoi(countS)
+	gmknFragmentation, _ := time.Parse("02.01.2006", "04.04.2024")
+	if ticker == "GMKN" && date.Before(gmknFragmentation) {
+		count *= 100
+	}
+	plzlFragmentation, _ := time.Parse("02.01.2006", "25.03.2025")
+	if ticker == "PLZL" && date.Before(plzlFragmentation) {
+		count *= 10
+	}
+	return count
 }
 
 func parseDateTime(timeStr string) (time.Time, error) {

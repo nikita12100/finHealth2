@@ -7,12 +7,14 @@ import (
 	"io"
 	"log"
 	"log/slog"
+	"strconv"
 	"test2/internal/common"
 	"test2/internal/db"
 	"test2/internal/fetcher"
 	"test2/internal/inserter"
 	"test2/internal/models"
 	"test2/internal/parser"
+	"test2/internal/stats"
 
 	"github.com/xuri/excelize/v2"
 	tele "gopkg.in/telebot.v4"
@@ -22,21 +24,70 @@ const (
 	listName = "broker_rep"
 )
 
+/*
+топ акции по весу, по %див
+пассивнфй доход
+сумма акций, сумма облиг, всего баланс
+разбивка по валютам
+Сколько я вкладываю каждый месяц
+*/
 func HandleStatsPortfolio(c tele.Context) error {
 	portfolio, err := db.GetPortfolio(c.Chat().ID, "test")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	count := portfolio.GetCountPerTicker()
-	avgPrice := portfolio.GetAvgBuyPricePerTicker()
+	topShareWeightTable, topShareDivTable := printStatReport(&portfolio)
+	
+	c.Send("Топ акций по весу")
+	c.Send(topShareWeightTable, tele.ModeMarkdown)
+	
+	c.Send("Топ акций по дивидентам")
+	c.Send(topShareDivTable, tele.ModeMarkdown)
 
-	inserter.InsertIntoSheet(count, avgPrice)
-	return c.Send("Данные загружены в таблицу")
+	return c.Send("end")
+}
+
+func printStatReport(p *models.Portfolio) (string, string) {
+	statsShare := stats.GetLastStatShare(p.Operations)
+	statsShare = common.FilterValue(statsShare, func(stat models.StatsShare) bool {
+		return stat.Count != 0
+	})
+
+	topShareWeightHeaders := []string{"№", "Ticker", fmt.Sprintf("W=%.0f", models.WEIGHT_NORM), "Sum"}
+	var topShareWeightRows [][]string
+	for i, kv := range common.SortValue(statsShare, func(i, j models.StatsShare) bool {
+		return i.Weight > j.Weight
+	}) {
+		row := []string{strconv.Itoa(i + 1), kv.Key, fmt.Sprintf("%.2f", kv.Value.Weight), fmt.Sprintf("%.0f", kv.Value.SumPriceTotal)}
+		topShareWeightRows = append(topShareWeightRows, row)
+	}
+	topShareWeightTable := common.PrintTable4(topShareWeightHeaders, topShareWeightRows)
+
+	topShareDivHeaders := []string{"№", "Ticker", "%", "sumDiv"}
+	var topShareDivRows [][]string
+	for i, kv := range common.SortValue(statsShare, func(i, j models.StatsShare) bool {
+		return i.DivPerc > j.DivPerc
+	}) {
+		row := []string{strconv.Itoa(i + 1), kv.Key, fmt.Sprintf("%.2f", kv.Value.DivPerc), fmt.Sprintf("%.0f", kv.Value.SumDiv)}
+		topShareDivRows = append(topShareDivRows, row)
+	}
+	topShareDivTable := common.PrintTable4(topShareDivHeaders, topShareDivRows)
+
+	return topShareWeightTable, topShareDivTable
 }
 
 func HandleUpdatePortfolio(c tele.Context) error {
-	return c.Send("Загрузите отчет формата .xlsx ...")
+	portfolio, err := db.GetPortfolio(c.Chat().ID, "test")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	statsShare := stats.GetLastStatShare(portfolio.Operations)
+	statsBond := stats.GetLastStatBond(portfolio.Operations)
+
+	inserter.InsertIntoSheet(statsShare, statsBond)
+	return c.Send("Данные загружены в таблицу")
 }
 
 func fetchFromBuf(buf io.Reader) []models.Operation {

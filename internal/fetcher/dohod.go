@@ -19,7 +19,6 @@ const (
 func GetDivYieldCached(ticker string) (float64, error) {
 	if entry, err := db.GetCacheDohod(ticker); err == nil {
 		if time.Since(entry.Created) < ttlDohod {
-			slog.Debug("Used cache GetDivYieldCached")
 			return entry.Value, nil
 		}
 	}

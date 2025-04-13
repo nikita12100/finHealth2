@@ -19,7 +19,6 @@ const (
 func GetTickerByISINCached(isin string) (string, error) {
 	if entry, err := db.GetCacheMoexIsin(isin); err == nil {
 		if time.Since(entry.Created) < ttlMOEX {
-			slog.Debug("Used cache GetTickerByISINCached")
 			return entry.Value, nil
 		}
 	}
@@ -73,7 +72,6 @@ func removeFixPrefix(input string) string {
 func GetLastPriceBondCached(ticker string) (models.StockBondInfo, error) {
 	if entry, err := db.GetCacheMoexStock(ticker); err == nil {
 		if time.Since(entry.Created) < ttlMOEXStock {
-			slog.Debug("Used cache GetLastPriceBondCached")
 			return entry.Value, nil
 		}
 	}

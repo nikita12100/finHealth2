@@ -48,7 +48,7 @@ func main() {
 
 	b.Handle("/start", handleStartMsg)
 	b.Handle(&tele.Btn{Text: "📈 Статистика портфеля"}, handlers.HandleStatsPortfolio)
-	b.Handle(&tele.Btn{Text: "📝 Обновить портфель"}, handlers.HandleUpdatePortfolio)
+	b.Handle(&tele.Btn{Text: "📝 [DEV]Записать данные"}, handlers.HandleUpdatePortfolio)
 	b.Handle(tele.OnDocument, handlers.HandleBrockerReportFile)
 
 	b.Start()
@@ -58,7 +58,7 @@ func handleStartMsg(c tele.Context) error {
 	menu := &tele.ReplyMarkup{ResizeKeyboard: true}
 
 	btnPortfolioStats := menu.Text("📈 Статистика портфеля")
-	btnPortfolioUpdate := menu.Text("📝 Обновить портфель")
+	btnPortfolioUpdate := menu.Text("📝 [DEV]Записать данные")
 	btnHelp := menu.Text("❓ Помощь")
 
 	menu.Reply(
