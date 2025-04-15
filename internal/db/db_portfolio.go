@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"log"
+	"sort"
 	"test2/internal/models"
 )
 
@@ -14,7 +15,11 @@ func SavePortfolio(p models.Portfolio) error {
 		return err
 	}
 
-	operationsJSON, err := json.Marshal(p.Operations)
+	operations := p.Operations
+	sort.Slice(operations, func(i, j int) bool {
+		return operations[i].Date.Before(operations[j].Date)
+	})
+	operationsJSON, err := json.Marshal(operations)
 	if err != nil {
 		return err
 	}

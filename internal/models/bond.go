@@ -14,6 +14,18 @@ type StockBondInfo struct {
 	FaceUnit     string  `json:"face_unit"`
 }
 
+type StatsBond struct {
+	Count               int
+	CountBuy            int
+	AvgPriceBuy         float64
+	LastPrice           float64
+	CouponValue         float64
+	SumPriceBuy         float64
+	SumPriceTotal       float64
+	CouponPeriodPerYear int
+	Coup2025            float64
+}
+
 func IsBond(ticker string) bool {
 	prefixPattern := `^[A-Z]{2}[0-9]{2}[A-Z0-9]+`
 	re := regexp.MustCompile(prefixPattern)

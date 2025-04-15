@@ -13,13 +13,17 @@ import (
 )
 
 type BlockPos struct {
-	posOperationsBegin int
-	posOperationsEnd   int
+	posOperationsBegin      int
+	posOperationsEnd        int
+	posMoneyOperationsBegin int
+	posMoneyOperationsEnd   int
 }
 
 const (
-	OPERATION_BEGIN = "Информация о совершенных и исполненных сделках на конец отчетного периода"
-	OPERATION_END   = "Информация о неисполненных сделках на конец отчетного периода"
+	OPERATION_BEGIN       = "Информация о совершенных и исполненных сделках на конец отчетного периода"
+	OPERATION_END         = "Информация о неисполненных сделках на конец отчетного периода"
+	MONEY_OPERATION_BEGIN = "Операции с денежными средствами"
+	MONEY_OPERATION_END   = "Движение по ценным бумагам инвестора"
 )
 
 func calcPos(rows [][]string) BlockPos {
@@ -31,6 +35,12 @@ func calcPos(rows [][]string) BlockPos {
 			}
 			if strings.Contains(row[0], OPERATION_END) {
 				positions.posOperationsEnd = i
+			}
+			if strings.Contains(row[0], MONEY_OPERATION_BEGIN) {
+				positions.posMoneyOperationsBegin = i
+			}
+			if strings.Contains(row[0], MONEY_OPERATION_END) {
+				positions.posMoneyOperationsEnd = i
 			}
 		}
 	}
@@ -60,9 +70,16 @@ func renameTicker(someTicker string) string {
 	return someTicker
 }
 
-func FetchOperations(rows [][]string) []Operation {
+func FetchData(rows [][]string) ([]Operation, []MoneyOperation) {
 	positions := calcPos(rows)
 
+	operations := fetchOperations(rows, positions)
+	moneyOperations := fetchMoneyOperations(rows, positions)
+
+	return operations, moneyOperations
+}
+
+func fetchOperations(rows [][]string, positions BlockPos) []Operation {
 	var operations []Operation
 	for i := positions.posOperationsBegin + 2; i < positions.posOperationsEnd; i++ {
 		if rows[i][0] == "" {
@@ -91,8 +108,7 @@ func FetchOperations(rows [][]string) []Operation {
 	return operations
 }
 
-
-func parsePrice(priceS string, ticker string, date time.Time) float64 { // fix не работает почему-то
+func parsePrice(priceS string, ticker string, date time.Time) float64 {
 	price, _ := strconv.ParseFloat(priceS, 64)
 	gmknFragmentation, _ := time.Parse("02.01.2006", "04.04.2024")
 	if ticker == "GMKN" && date.Before(gmknFragmentation) {
@@ -105,7 +121,7 @@ func parsePrice(priceS string, ticker string, date time.Time) float64 { // fix �
 	return price
 }
 
-func parseCount(countS string, ticker string, date time.Time) int { // fix не работает почему-то
+func parseCount(countS string, ticker string, date time.Time) int {
 	count, _ := strconv.Atoi(countS)
 	gmknFragmentation, _ := time.Parse("02.01.2006", "04.04.2024")
 	if ticker == "GMKN" && date.Before(gmknFragmentation) {
@@ -128,4 +144,79 @@ func parseDateTime(timeStr string) (time.Time, error) {
 	}
 
 	return parsedTime, nil
+}
+
+func parseDate(timeStr string) (time.Time, error) {
+	layout := "02.01.2006"
+
+	parsedTime, err := time.Parse(layout, timeStr)
+	if err != nil {
+		log.Printf("Error parsing time=%v error:%v\n", timeStr, err)
+		return time.Now(), err
+	}
+
+	return parsedTime, nil
+}
+
+func fetchMoneyOperations(rows [][]string, positions BlockPos) []MoneyOperation {
+	var moneyOperations []MoneyOperation
+	skipStart := true
+	for i := positions.posMoneyOperationsBegin + 2; i < positions.posMoneyOperationsEnd; i++ {
+		if skipStart && len(rows[i]) > 1 {
+			continue
+		} else {
+			skipStart = false
+		}
+		if len(rows[i]) <= 1 || (rows[i][1] == "" && rows[i][9] == "") || rows[i][9] == "Дата исполнения" {
+			continue
+		}
+		var moneyOperation MoneyOperation
+		moneyOperation.Time, _ = parseDate(rows[i][9])
+		moneyOperation.OperationType = parseMoneyOperationType(rows[i][14])
+		if moneyOperation.OperationType == Unknown {
+			slog.Warn("Unknown OperationType for", "str=", rows[i])
+		}
+		moneyOperation.AmountIn, _ = strconv.ParseFloat(rows[i][19], 64)
+		moneyOperation.AmountOut, _ = strconv.ParseFloat(rows[i][24], 64)
+		if len(rows[i]) == 28 {
+			moneyOperation.Comment = rows[i][27]
+		}
+
+		moneyOperations = append(moneyOperations, moneyOperation)
+	}
+
+	return moneyOperations
+}
+
+func parseMoneyOperationType(s string) OperationType {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "пополнение счета":
+		return Replenishment
+	case "покупка/продажа":
+		return BuyOrSell
+	case "комиссия за сделки":
+		return Commision
+	case "dvp/rvp":
+		return DVP
+	case "dfp/rfp":
+		return DFP
+	case "выплата купонов":
+		return Coupon
+	case "погашение облигации":
+		return BondExpire
+	case "налог":
+		return Tax
+	case "налог (по итогу года)":
+		return TaxYear
+	case "налог (дивиденды)":
+		return TaxDiv
+	case "выплата дивидендов":
+		return Dividends
+	case "вывод средств":
+		return Withdraw
+	case "репо":
+		return Repo
+	default:
+		return Unknown
+	}
 }

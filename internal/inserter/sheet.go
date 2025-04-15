@@ -27,9 +27,31 @@ func InsertIntoSheet(statsShare map[string]models.StatsShare, statsBond map[stri
 
 	var valuesBonds [][]interface{}
 	var valuesShares [][]interface{}
-	countSorted := common.SortKey(statsShare)
-	for _, ticker := range countSorted {
+	countSortedShare := common.SortKey(statsShare)
+	countSortedBond := common.SortKey(statsBond)
+	for _, ticker := range countSortedShare {
 		if statsShare[ticker].Count == 0 {
+			continue
+		}
+		if models.IsCurrency(ticker) {
+			continue
+		}
+		if models.IsShare(ticker) {
+			valuesShares = append(valuesShares, []interface{}{
+				ticker,
+				statsShare[ticker].Weight,
+				statsShare[ticker].Count,
+				statsShare[ticker].AvgPriceBuy,
+				statsShare[ticker].LastPrice,
+				statsShare[ticker].Div,
+				statsShare[ticker].SumPriceTotal,
+				statsShare[ticker].SumDiv,
+				statsShare[ticker].DivPerc,
+			})
+		}
+	}
+	for _, ticker := range countSortedBond {
+		if statsBond[ticker].Count == 0 {
 			continue
 		}
 		if models.IsCurrency(ticker) {
@@ -51,18 +73,6 @@ func InsertIntoSheet(statsShare map[string]models.StatsShare, statsBond map[stri
 				statsBond[ticker].CouponPeriodPerYear,
 				statsBond[ticker].SumPriceTotal,
 				statsBond[ticker].Coup2025,
-			})
-		} else if models.IsShare(ticker) {
-			valuesShares = append(valuesShares, []interface{}{
-				ticker,
-				statsShare[ticker].Weight,
-				statsShare[ticker].Count,
-				statsShare[ticker].AvgPriceBuy,
-				statsShare[ticker].LastPrice,
-				statsShare[ticker].Div,
-				statsShare[ticker].SumPriceTotal,
-				statsShare[ticker].SumDiv,
-				statsShare[ticker].DivPerc,
 			})
 		}
 	}

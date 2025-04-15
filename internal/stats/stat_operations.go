@@ -4,7 +4,18 @@ import (
 	"math"
 	"test2/internal/fetcher"
 	"test2/internal/models"
+	"time"
 )
+
+const (
+	USD_TO_RUB = 90
+	CNY_TO_RUB = 11
+)
+
+type TimeValue struct {
+	Time  time.Time
+	Value float64
+}
 
 func GetCountPerTicker(operations []models.Operation) map[string]int {
 	countMap := make(map[string]int)
@@ -61,15 +72,15 @@ func GetLastStatShare(operations []models.Operation) map[string]models.StatsShar
 		currStats.LastPrice, _ = fetcher.GetLastPriceShare(ticker)
 		currStats.SumPriceTotal = math.Round(currStats.LastPrice * float64(currStats.Count))
 		currStats.Weight = math.Round((currStats.SumPriceTotal/float64(models.WEIGHT_NORM))*100) / 100
-		
+
 		currStats.Div, _ = fetcher.GetDivYieldCached(ticker)
 		currStats.Div = math.Round(currStats.Div*100) / 100
-		
+
 		currStats.SumDiv = currStats.Div * float64(currStats.Count)
-		currStats.SumDiv = math.Round(currStats.SumDiv * 100) / 100
-		
+		currStats.SumDiv = math.Round(currStats.SumDiv*100) / 100
+
 		currStats.DivPerc = (currStats.Div / currStats.AvgPriceBuy) * 100
-		currStats.DivPerc = math.Round(currStats.DivPerc * 100) / 100
+		currStats.DivPerc = math.Round(currStats.DivPerc*100) / 100
 		stats[ticker] = currStats
 	}
 
@@ -101,13 +112,20 @@ func GetLastStatBond(operations []models.Operation) map[string]models.StatsBond 
 	for ticker, stat := range stats {
 		currStats := stat
 		bondInfo, _ := fetcher.GetLastPriceBondCached(ticker)
+		currStats.CouponValue = bondInfo.CouponValue
 		if bondInfo.FaceUnit == "USD" {
-			bondInfo.LastPrice = bondInfo.LastPrice * 100
-			currStats.AvgPriceBuy = currStats.AvgPriceBuy * 100
+			bondInfo.LastPrice = bondInfo.LastPrice * USD_TO_RUB
+			currStats.AvgPriceBuy = currStats.AvgPriceBuy * USD_TO_RUB
+			currStats.CouponValue = currStats.CouponValue * USD_TO_RUB
+		}
+		if bondInfo.FaceUnit == "CNY" {
+			bondInfo.LastPrice = bondInfo.LastPrice * CNY_TO_RUB
+			currStats.AvgPriceBuy = currStats.AvgPriceBuy * CNY_TO_RUB
+			currStats.CouponValue = currStats.CouponValue * CNY_TO_RUB
 		}
 		var couponPeriodPerYear int
 		if bondInfo.CouponPeriod != 0.0 {
-			couponPeriodPerYear = int(365.0 / bondInfo.CouponPeriod)
+			couponPeriodPerYear = 12 / int(math.Round(bondInfo.CouponPeriod/30.4))
 		} else {
 			couponPeriodPerYear = 0
 		}
@@ -115,10 +133,9 @@ func GetLastStatBond(operations []models.Operation) map[string]models.StatsBond 
 
 		currStats.AvgPriceBuy *= bondInfo.FaceValue // % -> RUB
 		currStats.LastPrice = bondInfo.LastPrice * bondInfo.FaceValue
-		currStats.CouponValue = bondInfo.CouponValue
 		currStats.CouponPeriodPerYear = couponPeriodPerYear
 		currStats.SumPriceTotal = float64(currStats.Count) * bondInfo.LastPrice * bondInfo.FaceValue
-		currStats.Coup2025 = float64(currStats.Count) * bondInfo.CouponValue * float64(couponPeriodPerYear)
+		currStats.Coup2025 = float64(currStats.Count) * currStats.CouponValue * float64(couponPeriodPerYear)
 
 		stats[ticker] = currStats
 	}
