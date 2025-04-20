@@ -49,6 +49,7 @@ func main() {
 	b.Handle("/start", handleStartMsg)
 	b.Handle(&tele.Btn{Text: "📈 Статистика портфеля. Таблицы"}, handlers.HandleStatsPortfolioTable)
 	b.Handle(&tele.Btn{Text: "📈 Статистика портфеля. Графики"}, handlers.HandleStatsPortfolioPlot)
+	b.Handle(&tele.Btn{Text: "📈 Статистика портфеля. Графики пополнений"}, handlers.HandleStatsPortfolioPlotReplenishment)
 	b.Handle(&tele.Btn{Text: "📝 [DEV]Записать данные"}, handlers.HandleUpdatePortfolio)
 	b.Handle(tele.OnDocument, handlers.HandleBrockerReportFile)
 
@@ -59,13 +60,15 @@ func handleStartMsg(c tele.Context) error {
 	menu := &tele.ReplyMarkup{ResizeKeyboard: true}
 
 	btnPortfolioStatsTable := menu.Text("📈 Статистика портфеля. Таблицы")
-	btnPortfolioStatsPlot := menu.Text("📈 Статистика портфеля. Графики")
+	btnPortfolioStatsPlot1 := menu.Text("📈 Статистика портфеля. Графики")
+	btnPortfolioStatsPlot2 := menu.Text("📈 Статистика портфеля. Графики пополнений")
 	btnPortfolioUpdate := menu.Text("📝 [DEV]Записать данные")
 	btnHelp := menu.Text("❓ Помощь")
 
 	menu.Reply(
 		menu.Row(btnPortfolioStatsTable),
-		menu.Row(btnPortfolioStatsPlot),
+		menu.Row(btnPortfolioStatsPlot1),
+		menu.Row(btnPortfolioStatsPlot2),
 		menu.Row(btnPortfolioUpdate),
 		menu.Row(btnHelp),
 	)

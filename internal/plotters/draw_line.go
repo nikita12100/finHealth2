@@ -24,10 +24,10 @@ func (tic integerTicks) Ticks(min, max float64) []plot.Tick {
 	return t
 }
 
-func InitPlot(title string, yLabel string) *plot.Plot {
+func InitPlotReplenishment() *plot.Plot {
 	p := plot.New()
 
-	p.Title.Text = title
+	p.Title.Text = "Пополнения"
 	p.Title.TextStyle.Font.Size = 16
 	p.Title.Padding = vg.Length(10) // Space above title
 
@@ -38,7 +38,34 @@ func InitPlot(title string, yLabel string) *plot.Plot {
 
 	// p.X.Tick.Marker = plot.TimeTicks{Format: "2006-01-02"}
 
-	p.Y.Label.Text = yLabel
+	p.Y.Label.Text = "руб."
+	p.Y.Tick.Marker = integerTicks{Step: 50000}
+
+	p.Legend.Top = true              // Place at top
+	p.Legend.Left = true             // Not on left side
+	p.Legend.XOffs = 0               // Horizontal offset
+	p.Legend.YOffs = -50             // Vertical offset
+	p.Legend.Padding = vg.Length(10) // Space around legend
+	p.Legend.TextStyle.Font.Size = 14
+
+	return p
+}
+
+func InitPlotCouponAndDiv() *plot.Plot {
+	p := plot.New()
+
+	p.Title.Text = "Пассивный доход"
+	p.Title.TextStyle.Font.Size = 16
+	p.Title.Padding = vg.Length(10) // Space above title
+
+	p.X.Padding = vg.Length(5) // Space below X axis
+	p.X.Tick.Label.Rotation = math.Pi / 4
+	p.X.Tick.Label.XAlign = text.XRight // Align to right of tick
+	p.X.Tick.Label.YAlign = text.YTop   // Align above tick
+
+	// p.X.Tick.Marker = plot.TimeTicks{Format: "2006-01-02"}
+
+	p.Y.Label.Text = "руб."
 	p.Y.Tick.Marker = integerTicks{Step: 1000}
 
 	p.Legend.Top = true              // Place at top
@@ -83,9 +110,21 @@ func GetLine(data []models.StatsMoneyOperationSnapshoot) (*plotter.Line, error) 
 func AddHistogram(stats []models.StatsMoneyOperationSnapshoot, plot *plot.Plot) error {
 	pts := make(plotter.Values, len(stats))
 	labels := make([]string, len(stats))
+
+	var labelsText []string
+	var labelsPos []plotter.XY
 	for i, stat := range stats {
-		labels[i] = stat.Time.Month().String()
+		labels[i] = stat.Time.Format("06/01")
 		pts[i] = stat.Replenishment
+
+		rLabel := fmt.Sprintf("%.0f", pts[i])
+		labelsText = append(labelsText, rLabel)
+
+		rxPos := float64(i) - 0.25
+		ryPos := pts[i] + 50
+
+		rXY := plotter.XY{X: rxPos, Y: ryPos}
+		labelsPos = append(labelsPos, rXY)
 	}
 
 	hist, err := plotter.NewBarChart(pts, 20)
@@ -94,9 +133,22 @@ func AddHistogram(stats []models.StatsMoneyOperationSnapshoot, plot *plot.Plot) 
 	}
 
 	plot.Add(hist)
-	plot.Legend.Add("Replenishment", hist)
-
 	plot.NominalX(labels...)
+
+	rl, err := plotter.NewLabels(plotter.XYLabels{
+		XYs:    labelsPos,
+		Labels: labelsText,
+	},
+	)
+	if err != nil {
+		log.Fatalf("could not creates labels plotter: %+v", err)
+	}
+	for i := range rl.TextStyle {
+		rl.TextStyle[i].Color = color.Black
+		rl.TextStyle[i].Font.Size = 12
+	}
+
+	plot.Add(rl)
 
 	return nil
 }
@@ -109,7 +161,7 @@ func AddHistogramCoupAndDiv(stats []models.StatsMoneyOperationSnapshoot, plot *p
 	var labelsText []string
 	var labelsPos []plotter.XY
 	for i, stat := range stats {
-		labels[i] = stat.Time.Format("06-01")
+		labels[i] = stat.Time.Format("06/01")
 		ptsCoupon[i] = stat.Coupon
 		ptsDiv[i] = stat.Dividends
 
