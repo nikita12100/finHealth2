@@ -28,9 +28,9 @@ func HandleStatsPortfolioPlot(c tele.Context) error {
 	return c.Send("end plot")
 }
 
-func getPhoto(statsPerMonth []models.StatsMoneyOperationSnapshoot) (*tele.Photo, error){
-	plot := plotters.InitPlot()
-	err := plotters.AddHistogram2(statsPerMonth, plot)
+func getPhoto(statsPerMonth []models.StatsMoneyOperationSnapshoot) (*tele.Photo, error) {
+	plot := plotters.InitPlot("Пассивный доход", "руб.")
+	err := plotters.AddHistogramCoupAndDiv(statsPerMonth, plot)
 	if err != nil {
 		return nil, err
 	}
