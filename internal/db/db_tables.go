@@ -7,7 +7,7 @@ import (
 
 const (
 	dbPortfolio = "./portfolio.db"
-	dbCache = "./cache.db"
+	dbCache     = "./cache.db"
 )
 
 func InitTables() {

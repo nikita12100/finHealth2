@@ -101,7 +101,6 @@ func AddHistogram(stats []models.StatsMoneyOperationSnapshoot, plot *plot.Plot) 
 	return nil
 }
 
-// https://github.com/gonum/plot/issues/656
 func AddHistogramCoupAndDiv(stats []models.StatsMoneyOperationSnapshoot, plot *plot.Plot) error {
 	ptsCoupon := make(plotter.Values, len(stats))
 	ptsDiv := make(plotter.Values, len(stats))
@@ -110,7 +109,7 @@ func AddHistogramCoupAndDiv(stats []models.StatsMoneyOperationSnapshoot, plot *p
 	var labelsText []string
 	var labelsPos []plotter.XY
 	for i, stat := range stats {
-		labels[i] = stat.Time.Month().String()
+		labels[i] = stat.Time.Format("06-01")
 		ptsCoupon[i] = stat.Coupon
 		ptsDiv[i] = stat.Dividends
 

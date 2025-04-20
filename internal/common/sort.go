@@ -48,8 +48,6 @@ func SortValue[T any](m map[string]T, compare func(i, j T) bool) []struct {
 	return ss
 }
 
-
-
 func FilterValue[T any](m map[string]T, condition func(T) bool) map[string]T {
 	result := make(map[string]T)
 	for key, value := range m {
@@ -92,7 +90,6 @@ func FilterKey(m map[string]int, condition func(string) bool) map[string]int {
 
 // 	return result
 // }
-
 
 func UnionOperation[T any](a, b []T) []T {
 	seen := make(map[string]bool)

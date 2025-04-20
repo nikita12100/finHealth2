@@ -30,7 +30,7 @@ type MoneyOperation struct {
 }
 
 type StatsMoneyOperationSnapshoot struct {
-	Time          time.Time   
+	Time          time.Time
 	Replenishment float64
 	Coupon        float64
 	Dividends     float64
