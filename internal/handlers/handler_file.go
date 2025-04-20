@@ -76,8 +76,6 @@ func HandleBrockerReportFile(c tele.Context) error {
 	} else {
 		resOperations = common.UnionOperation(optOldPortfolio.Operations, newOperations)
 		resMoneyOperations = common.UnionOperation(optOldPortfolio.MoneyOperations, newMoneyOperations)
-		log.Printf("try union: resMoneyOperations=%v", resMoneyOperations)
-		log.Printf("try union: optOldPortfolio.MoneyOperations=%v, newMoneyOperations=%v,", optOldPortfolio.MoneyOperations, newMoneyOperations)
 	}
 
 	err = db.SavePortfolio(models.Portfolio{

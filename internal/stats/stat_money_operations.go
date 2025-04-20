@@ -1,34 +1,41 @@
 package stats
 
 import (
+	"log/slog"
 	"test2/internal/models"
-	"time"
 )
 
+func GetReplenishmentPerMonth(moneyOperations []models.MoneyOperation) []models.StatsMoneyOperationSnapshoot {
+	if len(moneyOperations) < 1 {
+		slog.Error("GetReplenishmentPerMonth len < 1")
+		return nil
+	}
 
-func GetReplenishmentPerMonth(moneyOperations []models.MoneyOperation) []TimeValue {
-	var res []TimeValue
-	curSum := 0.0
-	var curMonth time.Time
+	var stats []models.StatsMoneyOperationSnapshoot
+	var curStat models.StatsMoneyOperationSnapshoot
+	curStat.Time = moneyOperations[0].Time
+
 	for i, op := range moneyOperations {
-		if op.OperationType == models.Replenishment {
-			if curMonth.IsZero() {
-				curMonth = op.Time
-			}
-			if op.Time.Month() == curMonth.Month() {
-				curSum += op.AmountIn
-			} else {
-				res = append(res, TimeValue{Time: curMonth, Value: curSum})
-				curSum = 0
-				curSum += op.AmountIn
-				curMonth = op.Time
-			}
-
+		if op.Time.Month() != curStat.Time.Month() {
+			stats = append(stats, curStat)
+			curStat = models.StatsMoneyOperationSnapshoot{}
+			curStat.Time = op.Time
 		}
+
+		if op.OperationType == models.Replenishment {
+			curStat.Replenishment += op.AmountIn
+		}
+		if op.OperationType == models.Coupon {
+			curStat.Coupon += op.AmountIn
+		}
+		if op.OperationType == models.Dividends {
+			curStat.Dividends += op.AmountIn
+		}
+
 		if i == (len(moneyOperations) - 1) {
-			res = append(res, TimeValue{Time: curMonth, Value: curSum})
+			stats = append(stats, curStat)
 		}
 	}
 
-	return res
+	return stats
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"log"
 	"test2/internal/db"
+	"test2/internal/models"
 	"test2/internal/plotters"
 	"test2/internal/stats"
 
@@ -15,15 +16,29 @@ func HandleStatsPortfolioPlot(c tele.Context) error {
 	if err != nil {
 		log.Fatal(err)
 	}
+	statsPerMonth := stats.GetReplenishmentPerMonth(portfolio.MoneyOperations)
 
-	c.Send("Инвестиции в месяц...")
-	replenishments := stats.GetReplenishmentPerMonth(portfolio.MoneyOperations)
-	plotBuffer, err := plotters.CreatePlot(replenishments)
+	photo, err := getPhoto(statsPerMonth)
 	if err != nil {
 		return err
 	}
-	photo := &tele.Photo{File: tele.FromReader(bytes.NewReader(plotBuffer.Bytes()))}
+	c.Send("Инвестиции в месяц...")
 	c.Send(photo, "Here's your photo!")
 
 	return c.Send("end plot")
+}
+
+func getPhoto(statsPerMonth []models.StatsMoneyOperationSnapshoot) (*tele.Photo, error){
+	plot := plotters.InitPlot()
+	err := plotters.AddHistogram2(statsPerMonth, plot)
+	if err != nil {
+		return nil, err
+	}
+
+	plotBuffer, err := plotters.RenderPlot(plot)
+	if err != nil {
+		return nil, err
+	}
+
+	return &tele.Photo{File: tele.FromReader(bytes.NewReader(plotBuffer.Bytes()))}, nil
 }

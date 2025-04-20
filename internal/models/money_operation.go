@@ -28,3 +28,10 @@ type MoneyOperation struct {
 	AmountOut     float64       `json:"amount_out"`
 	Comment       string        `json:"comment"`
 }
+
+type StatsMoneyOperationSnapshoot struct {
+	Time          time.Time   
+	Replenishment float64
+	Coupon        float64
+	Dividends     float64
+}
