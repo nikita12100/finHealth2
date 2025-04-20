@@ -3,7 +3,6 @@ package common
 import (
 	"fmt"
 	"sort"
-	"test2/internal/models"
 )
 
 func SortKey[T comparable](m map[string]T) []string {
@@ -71,9 +70,33 @@ func FilterKey(m map[string]int, condition func(string) bool) map[string]int {
 	return result
 }
 
-func UnionOperation(a, b []models.Operation) []models.Operation {
+// func UnionOperation(a, b []models.Operation) []models.Operation {
+// 	seen := make(map[string]bool)
+// 	var result []models.Operation
+
+// 	for _, p := range a {
+// 		str := fmt.Sprintf("%v", p)
+// 		if !seen[str] {
+// 			seen[str] = true
+// 			result = append(result, p)
+// 		}
+// 	}
+
+// 	for _, p := range b {
+// 		str := fmt.Sprintf("%v", p)
+// 		if !seen[str] {
+// 			seen[str] = true
+// 			result = append(result, p)
+// 		}
+// 	}
+
+// 	return result
+// }
+
+
+func UnionOperation[T any](a, b []T) []T {
 	seen := make(map[string]bool)
-	var result []models.Operation
+	var result []T
 
 	for _, p := range a {
 		str := fmt.Sprintf("%v", p)

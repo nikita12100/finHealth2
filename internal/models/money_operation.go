@@ -18,13 +18,13 @@ const (
 	TaxDiv                             // 10
 	Dividends                          // 11
 	Withdraw                           // 12
-	Repo                           	   // 13
+	Repo                               // 13
 )
 
 type MoneyOperation struct {
-	Time          time.Time
-	OperationType OperationType
-	AmountIn      float64
-	AmountOut     float64
-	Comment       string
+	Time          time.Time     `json:"time"`
+	OperationType OperationType `json:"operation_type"`
+	AmountIn      float64       `json:"amount_in"`
+	AmountOut     float64       `json:"amount_out"`
+	Comment       string        `json:"comment"`
 }
