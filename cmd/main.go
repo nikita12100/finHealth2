@@ -14,6 +14,15 @@ import (
 
 const (
 	tokenName = "TG_TOKEN_FIN_HEALTH"
+	btnPortfolioInfo1Text = "📊 распределение активов"
+	btnPortfolioInfo2Text = "💵 баланс"
+	btnPortfolioInfo3Text = "ℹ️ информация о портфеле"
+
+	btnPortfolioStat1Text = "📈 пополнения"
+	btnPortfolioStat2Text = "📈 дивиденты+купоны"
+	btnPortfolioStat3Text = "[DEV] ???"
+
+	btnHelpText = "❓ Помощь"
 )
 
 func initLogger() {
@@ -47,10 +56,15 @@ func main() {
 	}
 
 	b.Handle("/start", handleStartMsg)
-	b.Handle(&tele.Btn{Text: "📈 Статистика портфеля. Таблицы"}, handlers.HandleStatsPortfolioTable)
-	b.Handle(&tele.Btn{Text: "📈 Статистика портфеля. Графики"}, handlers.HandleStatsPortfolioPlot)
-	b.Handle(&tele.Btn{Text: "📈 Статистика портфеля. Графики пополнений"}, handlers.HandleStatsPortfolioPlotReplenishment)
-	b.Handle(&tele.Btn{Text: "📝 [DEV]Записать данные"}, handlers.HandleUpdatePortfolio)
+
+	b.Handle(&tele.Btn{Text: btnPortfolioInfo1Text}, handlers.HandleStatsPortfolioAllocations)
+	b.Handle(&tele.Btn{Text: btnPortfolioInfo2Text}, handlers.HandleStatsPortfolioTable)
+	b.Handle(&tele.Btn{Text: btnPortfolioInfo3Text}, handlers.HandleStatsPortfolioTable)
+
+	b.Handle(&tele.Btn{Text: btnPortfolioStat1Text}, handlers.HandleStatsPortfolioPlotReplenishment)
+	b.Handle(&tele.Btn{Text: btnPortfolioStat2Text}, handlers.HandleStatsPortfolioPlot)
+	b.Handle(&tele.Btn{Text: btnPortfolioStat3Text}, handlers.HandleUpdatePortfolio)
+	
 	b.Handle(tele.OnDocument, handlers.HandleBrockerReportFile)
 
 	b.Start()
@@ -59,17 +73,19 @@ func main() {
 func handleStartMsg(c tele.Context) error {
 	menu := &tele.ReplyMarkup{ResizeKeyboard: true}
 
-	btnPortfolioStatsTable := menu.Text("📈 Статистика портфеля. Таблицы")
-	btnPortfolioStatsPlot1 := menu.Text("📈 Статистика портфеля. Графики")
-	btnPortfolioStatsPlot2 := menu.Text("📈 Статистика портфеля. Графики пополнений")
-	btnPortfolioUpdate := menu.Text("📝 [DEV]Записать данные")
-	btnHelp := menu.Text("❓ Помощь")
+	btnPortfolioInfo1 := menu.Text(btnPortfolioInfo1Text)
+	btnPortfolioInfo2 := menu.Text(btnPortfolioInfo2Text)
+	btnPortfolioInfo3 := menu.Text(btnPortfolioInfo3Text)
+
+	btnPortfolioStat1 := menu.Text(btnPortfolioStat1Text)
+	btnPortfolioStat2 := menu.Text(btnPortfolioStat2Text)
+	btnPortfolioStat3 := menu.Text(btnPortfolioStat3Text)
+	btnHelp := menu.Text(btnHelpText)
 
 	menu.Reply(
-		menu.Row(btnPortfolioStatsTable),
-		menu.Row(btnPortfolioStatsPlot1),
-		menu.Row(btnPortfolioStatsPlot2),
-		menu.Row(btnPortfolioUpdate),
+		menu.Row(btnPortfolioInfo1, btnPortfolioStat1),
+		menu.Row(btnPortfolioInfo2, btnPortfolioStat2),
+		menu.Row(btnPortfolioInfo3, btnPortfolioStat3),
 		menu.Row(btnHelp),
 	)
 

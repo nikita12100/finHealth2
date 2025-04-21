@@ -8,7 +8,6 @@ type Share struct {
 }
 
 type StatsShare struct {
-	Weight        float64
 	Count         int
 	CountBuy      int
 	AvgPriceBuy   float64

@@ -6,6 +6,7 @@ import (
 	"image/color"
 	"log"
 	"math"
+	"test2/internal/common"
 	"test2/internal/models"
 
 	"gonum.org/v1/plot"
@@ -24,10 +25,11 @@ func (tic integerTicks) Ticks(min, max float64) []plot.Tick {
 	return t
 }
 
-func InitPlotReplenishment() *plot.Plot {
+func InitPlot(title string, yLabel string, ticks int) *plot.Plot {
 	p := plot.New()
+	p.Add(plotter.NewGrid())
 
-	p.Title.Text = "Пополнения"
+	p.Title.Text = title
 	p.Title.TextStyle.Font.Size = 16
 	p.Title.Padding = vg.Length(10) // Space above title
 
@@ -38,35 +40,8 @@ func InitPlotReplenishment() *plot.Plot {
 
 	// p.X.Tick.Marker = plot.TimeTicks{Format: "2006-01-02"}
 
-	p.Y.Label.Text = "руб."
-	p.Y.Tick.Marker = integerTicks{Step: 50000}
-
-	p.Legend.Top = true              // Place at top
-	p.Legend.Left = true             // Not on left side
-	p.Legend.XOffs = 0               // Horizontal offset
-	p.Legend.YOffs = -50             // Vertical offset
-	p.Legend.Padding = vg.Length(10) // Space around legend
-	p.Legend.TextStyle.Font.Size = 14
-
-	return p
-}
-
-func InitPlotCouponAndDiv() *plot.Plot {
-	p := plot.New()
-
-	p.Title.Text = "Пассивный доход"
-	p.Title.TextStyle.Font.Size = 16
-	p.Title.Padding = vg.Length(10) // Space above title
-
-	p.X.Padding = vg.Length(5) // Space below X axis
-	p.X.Tick.Label.Rotation = math.Pi / 4
-	p.X.Tick.Label.XAlign = text.XRight // Align to right of tick
-	p.X.Tick.Label.YAlign = text.YTop   // Align above tick
-
-	// p.X.Tick.Marker = plot.TimeTicks{Format: "2006-01-02"}
-
-	p.Y.Label.Text = "руб."
-	p.Y.Tick.Marker = integerTicks{Step: 1000}
+	p.Y.Label.Text = yLabel
+	p.Y.Tick.Marker = integerTicks{Step: ticks}
 
 	p.Legend.Top = true              // Place at top
 	p.Legend.Left = true             // Not on left side
@@ -107,7 +82,7 @@ func GetLine(data []models.StatsMoneyOperationSnapshoot) (*plotter.Line, error) 
 	return line, nil
 }
 
-func AddHistogram(stats []models.StatsMoneyOperationSnapshoot, plot *plot.Plot) error {
+func AddBarChart(stats []models.StatsMoneyOperationSnapshoot, plot *plot.Plot) error {
 	pts := make(plotter.Values, len(stats))
 	labels := make([]string, len(stats))
 
@@ -153,7 +128,7 @@ func AddHistogram(stats []models.StatsMoneyOperationSnapshoot, plot *plot.Plot) 
 	return nil
 }
 
-func AddHistogramCoupAndDiv(stats []models.StatsMoneyOperationSnapshoot, plot *plot.Plot) error {
+func AddBarChartCoupAndDiv(stats []models.StatsMoneyOperationSnapshoot, plot *plot.Plot) error {
 	ptsCoupon := make(plotter.Values, len(stats))
 	ptsDiv := make(plotter.Values, len(stats))
 	labels := make([]string, len(stats))
@@ -208,6 +183,34 @@ func AddHistogramCoupAndDiv(stats []models.StatsMoneyOperationSnapshoot, plot *p
 	}
 
 	plot.Add(rl)
+
+	return nil
+}
+
+func AddHistogramSumPriceTotal(stats map[string]models.StatsShare, plot *plot.Plot) error {
+	pts := make(plotter.XYs, len(stats))
+	labels := make([]string, len(stats))
+
+	statsKV := common.SortValue(stats, func(i, j models.StatsShare) bool {
+		return i.SumPriceTotal > j.SumPriceTotal
+	})
+
+	i := 0
+	for _, kv := range statsKV {
+		labels[i] = kv.Key
+		pts[i].X = float64(i)
+		pts[i].Y = kv.Value.SumPriceTotal
+
+		i++
+	}
+
+	hist, err := plotter.NewHistogram(pts, len(stats)*2)
+	if err != nil {
+		return err
+	}
+
+	plot.Add(hist)
+	plot.NominalX(labels...)
 
 	return nil
 }

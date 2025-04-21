@@ -39,7 +39,7 @@ func InsertIntoSheet(statsShare map[string]models.StatsShare, statsBond map[stri
 		if models.IsShare(ticker) {
 			valuesShares = append(valuesShares, []interface{}{
 				ticker,
-				statsShare[ticker].Weight,
+				0,
 				statsShare[ticker].Count,
 				statsShare[ticker].AvgPriceBuy,
 				statsShare[ticker].LastPrice,

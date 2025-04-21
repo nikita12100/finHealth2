@@ -7,10 +7,30 @@ import (
 	"test2/internal/common"
 	"test2/internal/db"
 	"test2/internal/models"
+	"test2/internal/plotters"
 	"test2/internal/stats"
 
 	tele "gopkg.in/telebot.v4"
 )
+
+func HandleStatsPortfolioAllocations(c tele.Context) error {
+	portfolio, err := db.GetPortfolio(c.Chat().ID, "test")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	statsShare := stats.GetLastStatShare(portfolio.Operations)
+	statsShare = common.FilterValue(statsShare, func(stat models.StatsShare) bool {
+		return stat.Count != 0
+	})
+
+	photo, err := getPhoto("Распределение активов", "руб.", 10000, statsShare, plotters.AddHistogramSumPriceTotal)
+	if err != nil {
+		return err
+	}
+
+	return c.Send(photo, "Here's your photo!")
+}
 
 func HandleStatsPortfolioTable(c tele.Context) error {
 	portfolio, err := db.GetPortfolio(c.Chat().ID, "test")
@@ -18,10 +38,7 @@ func HandleStatsPortfolioTable(c tele.Context) error {
 		log.Fatal(err)
 	}
 
-	topShareWeightTable, topShareDivTable, divTable, sumTotalTable := printStatReport(&portfolio)
-
-	c.Send("Топ акций по весу")
-	c.Send(topShareWeightTable, tele.ModeMarkdown)
+	topShareDivTable, divTable, sumTotalTable := printStatReport(&portfolio)
 
 	c.Send("Топ акций по дивидентам")
 	c.Send(topShareDivTable, tele.ModeMarkdown)
@@ -35,7 +52,7 @@ func HandleStatsPortfolioTable(c tele.Context) error {
 	return c.Send("end table")
 }
 
-func printStatReport(p *models.Portfolio) (string, string, string, string) {
+func printStatReport(p *models.Portfolio) (string, string, string) {
 	statsShare := stats.GetLastStatShare(p.Operations)
 	statsBond := stats.GetLastStatBond(p.Operations)
 	statsShare = common.FilterValue(statsShare, func(stat models.StatsShare) bool {
@@ -45,24 +62,11 @@ func printStatReport(p *models.Portfolio) (string, string, string, string) {
 		return stat.Count != 0
 	})
 
-	topShareWeightTable := prepareTopShareWeightTable(statsShare)
 	topShareDivTable := prepareTopShareDivTable(statsShare)
 	divTable := prepareDivTable(statsShare, statsBond)
 	sumTotalTable := prepareSumTotalTable(statsShare, statsBond)
 
-	return topShareWeightTable, topShareDivTable, divTable, sumTotalTable
-}
-
-func prepareTopShareWeightTable(statsShare map[string]models.StatsShare) string {
-	topShareWeightHeaders := []string{"№", "Ticker", fmt.Sprintf("W=%.0f", models.WEIGHT_NORM), "Sum"}
-	var topShareWeightRows [][]string
-	for i, kv := range common.SortValue(statsShare, func(i, j models.StatsShare) bool {
-		return i.Weight > j.Weight
-	}) {
-		row := []string{strconv.Itoa(i + 1), kv.Key, fmt.Sprintf("%.2f", kv.Value.Weight), fmt.Sprintf("%.0f", kv.Value.SumPriceTotal)}
-		topShareWeightRows = append(topShareWeightRows, row)
-	}
-	return common.PrintTable4(topShareWeightHeaders, topShareWeightRows)
+	return topShareDivTable, divTable, sumTotalTable
 }
 
 func prepareTopShareDivTable(statsShare map[string]models.StatsShare) string {

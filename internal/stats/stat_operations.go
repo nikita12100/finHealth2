@@ -71,7 +71,6 @@ func GetLastStatShare(operations []models.Operation) map[string]models.StatsShar
 		currStats := stat
 		currStats.LastPrice, _ = fetcher.GetLastPriceShare(ticker)
 		currStats.SumPriceTotal = math.Round(currStats.LastPrice * float64(currStats.Count))
-		currStats.Weight = math.Round((currStats.SumPriceTotal/float64(models.WEIGHT_NORM))*100) / 100
 
 		currStats.Div, _ = fetcher.GetDivYieldCached(ticker)
 		currStats.Div = math.Round(currStats.Div*100) / 100

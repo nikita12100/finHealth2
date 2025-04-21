@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"test2/internal/db"
-	"test2/internal/models"
 	"test2/internal/plotters"
 	"test2/internal/stats"
 
@@ -20,7 +19,7 @@ func HandleStatsPortfolioPlot(c tele.Context) error {
 	}
 	statsPerMonth := stats.GetReplenishmentPerMonth(portfolio.MoneyOperations)
 
-	photo, err := getPhoto(statsPerMonth, plotters.InitPlotCouponAndDiv, plotters.AddHistogramCoupAndDiv)
+	photo, err := getPhoto("Пассивный доход", "руб.", 1000, statsPerMonth, plotters.AddBarChartCoupAndDiv)
 	if err != nil {
 		return err
 	}
@@ -42,7 +41,7 @@ func HandleStatsPortfolioPlotReplenishment(c tele.Context) error {
 	}
 	statsPerMonth := stats.GetReplenishmentPerMonth(portfolio.MoneyOperations)
 
-	photo, err := getPhoto(statsPerMonth, plotters.InitPlotReplenishment, plotters.AddHistogram)
+	photo, err := getPhoto("Пополнения", "руб.", 50000, statsPerMonth, plotters.AddBarChart)
 	if err != nil {
 		return err
 	}
@@ -51,13 +50,15 @@ func HandleStatsPortfolioPlotReplenishment(c tele.Context) error {
 	return c.Send("Replenishments")
 }
 
-func getPhoto(
-	statsPerMonth []models.StatsMoneyOperationSnapshoot,
-	initPlot func() *plot.Plot,
-	addData func([]models.StatsMoneyOperationSnapshoot, *plot.Plot) error,
+func getPhoto[T any](
+	title string,
+	yLabel string,
+	ticks int,
+	data T,
+	addData func(T, *plot.Plot) error,
 ) (*tele.Photo, error) {
-	plot := initPlot()
-	err := addData(statsPerMonth, plot)
+	plot := plotters.InitPlot(title, yLabel, ticks)
+	err := addData(data, plot)
 	if err != nil {
 		return nil, err
 	}
