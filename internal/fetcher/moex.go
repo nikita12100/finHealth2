@@ -87,7 +87,7 @@ func GetLastPriceBondCached(ticker string) (models.StockBondInfo, error) {
 }
 
 func getLastPriceBond(ticker string) (models.StockBondInfo, error) {
-	resp, err := http.Get(fmt.Sprintf("https://iss.moex.com/iss/engines/stock/markets/bonds/securities/%s.json", ticker))
+	resp, err := http.Get(fmt.Sprintf("https://iss.moex.com/iss/engines/stock/markets/bonds/securities/%s.json?iss.meta=off&iss.only=securities&securities.columns=BOARDID,COUPONVALUE,FACEVALUE,COUPONPERIOD,FACEUNIT,PREVPRICE", ticker))
 	if err != nil {
 		slog.Error("Got error while GET url", ticker, err)
 		return models.StockBondInfo{}, err
@@ -95,7 +95,7 @@ func getLastPriceBond(ticker string) (models.StockBondInfo, error) {
 	defer resp.Body.Close()
 
 	type response struct {
-		Marketdata struct {
+		Securities struct {
 			Columns []string        `json:"columns"`
 			Data    [][]interface{} `json:"data"`
 		} `json:"securities"`
@@ -114,51 +114,27 @@ func getLastPriceBond(ticker string) (models.StockBondInfo, error) {
 	} else {
 		sType = "TQCB"
 	}
-	for i, name := range responseT.Marketdata.Columns {
-		if name == "BOARDID" {
-			for j := range len(responseT.Marketdata.Data) {
-				if responseT.Marketdata.Data[j][i] == sType {
-					tqbrIndex = j
-					break
-				}
-			}
+	if len(responseT.Securities.Data) == 0 || len(responseT.Securities.Data[0]) == 0 {
+		slog.Error("wrong answer format moex Bond", "ticker", ticker)
+		return models.StockBondInfo{}, err
+	}
+	for i := range len(responseT.Securities.Data) {
+		if responseT.Securities.Data[i][0] == sType {
+			tqbrIndex = i
+			break
 		}
 	}
-	var couponValue, lastPrice, faceValue, couponPeriod float64
-	var faceUnit string
-	for i, name := range responseT.Marketdata.Columns {
-		if name == "COUPONVALUE" {
-			if len(responseT.Marketdata.Data) > 0 {
-				couponValue = responseT.Marketdata.Data[tqbrIndex][i].(float64)
-			} else {
-				slog.Error("Not found COUPONVALUE in response", "ticker", ticker)
-			}
-		} else if name == "PREVPRICE" {
-			if len(responseT.Marketdata.Data) > 0 {
-				lastPrice = responseT.Marketdata.Data[tqbrIndex][i].(float64)
-			} else {
-				slog.Error("Not found PREVPRICE in response", "ticker", ticker)
-			}
-		} else if name == "FACEVALUE" {
-			if len(responseT.Marketdata.Data) > 0 {
-				faceValue = responseT.Marketdata.Data[tqbrIndex][i].(float64)
-			} else {
-				slog.Error("Not found FACEVALUE in response", "ticker", ticker)
-			}
-		} else if name == "COUPONPERIOD" {
-			if len(responseT.Marketdata.Data) > 0 {
-				couponPeriod = responseT.Marketdata.Data[tqbrIndex][i].(float64)
-			} else {
-				slog.Error("Not found COUPONPERIOD in response", "ticker", ticker)
-			}
-		} else if name == "FACEUNIT" {
-			if len(responseT.Marketdata.Data) > 0 {
-				faceUnit = responseT.Marketdata.Data[tqbrIndex][i].(string)
-			} else {
-				slog.Error("Not found FACEUNIT in response", "ticker", ticker)
-			}
-		}
+
+	if len(responseT.Securities.Data[tqbrIndex]) < 5 || len(responseT.Securities.Data[tqbrIndex]) == 0 {
+		slog.Error("wrong answer format2 moex Bond", "ticker", ticker)
+		return models.StockBondInfo{}, err
 	}
+	couponValue := responseT.Securities.Data[tqbrIndex][1].(float64)
+	faceValue := responseT.Securities.Data[tqbrIndex][2].(float64)
+	couponPeriod := responseT.Securities.Data[tqbrIndex][3].(float64)
+	faceUnit := responseT.Securities.Data[tqbrIndex][4].(string)
+	lastPrice := responseT.Securities.Data[tqbrIndex][5].(float64)
+
 	return models.StockBondInfo{
 		CouponValue:  couponValue,
 		LastPrice:    lastPrice,
@@ -169,7 +145,7 @@ func getLastPriceBond(ticker string) (models.StockBondInfo, error) {
 }
 
 func GetLastPriceShare(ticker string) (float64, error) {
-	resp, err := http.Get(fmt.Sprintf("https://iss.moex.com/iss/engines/stock/markets/shares/securities/%s.json", ticker))
+	resp, err := http.Get(fmt.Sprintf("https://iss.moex.com/iss/engines/stock/markets/shares/securities/%s.json?iss.meta=off&iss.only=marketdata&marketdata.columns=BOARDID,LAST", ticker))
 	if err != nil {
 		slog.Error("Got error while GET url", ticker, err)
 		return 0.0, err
@@ -180,35 +156,59 @@ func GetLastPriceShare(ticker string) (float64, error) {
 		Marketdata struct {
 			Columns []string        `json:"columns"`
 			Data    [][]interface{} `json:"data"`
-		} `json:"securities"`
+		} `json:"marketdata"`
 	}
 
 	var responseT response
 	if err := json.NewDecoder(resp.Body).Decode(&responseT); err != nil {
-		slog.Error("Failed parse to json answer", "ticker", ticker, err)
+		slog.Error("Failed parse to json answer", "ticker", ticker, "error", err)
 		return 0.0, err
 	}
 
+	if len(responseT.Marketdata.Data) == 0 {
+		slog.Error("wrong answer format moex Share", "ticker", ticker)
+		return 0.0, err
+	}
 	var tqbrIndex int
-	for i, name := range responseT.Marketdata.Columns {
-		if name == "BOARDID" {
-			for j := range len(responseT.Marketdata.Data) {
-				if responseT.Marketdata.Data[j][i] == "TQBR" {
-					tqbrIndex = j
-					break
-				}
-			}
+	for i := range len(responseT.Marketdata.Data) {
+		if responseT.Marketdata.Data[i][0] == "TQBR" {
+			tqbrIndex = i
+			break
 		}
 	}
-	var lastPrice float64
-	for i, name := range responseT.Marketdata.Columns {
-		if name == "PREVPRICE" {
-			if len(responseT.Marketdata.Data) > 0 {
-				lastPrice = responseT.Marketdata.Data[tqbrIndex][i].(float64)
-			} else {
-				slog.Error("Not found PREVPRICE in response", "ticker", ticker)
-			}
-		}
+
+	if len(responseT.Marketdata.Data[tqbrIndex]) == 0 {
+		slog.Error("wrong answer format2 moex Share", "ticker", ticker)
+		return 0.0, err
 	}
-	return lastPrice, nil
+	return responseT.Marketdata.Data[tqbrIndex][1].(float64), nil
+}
+
+func GetLastPriceTOM(ticker string) (float64, error) {
+	resp, err := http.Get(fmt.Sprintf("https://iss.moex.com/iss/engines/currency/markets/selt/boards/CETS/securities/%s.json?iss.meta=off&iss.only=marketdata&marketdata.columns=LAST", ticker))
+	if err != nil {
+		slog.Error("Got error while GET url", ticker, err)
+		return 0.0, err
+	}
+	defer resp.Body.Close()
+
+	type response struct {
+		Marketdata struct {
+			Columns []string        `json:"columns"`
+			Data    [][]interface{} `json:"data"`
+		} `json:"marketdata"`
+	}
+
+	var responseT response
+	if err := json.NewDecoder(resp.Body).Decode(&responseT); err != nil {
+		slog.Error("Failed parse to json answer", "ticker", ticker, "error", err)
+		return 0.0, err
+	}
+
+	if len(responseT.Marketdata.Data) == 0 || len(responseT.Marketdata.Data[0]) == 0 {
+		slog.Error("wrong answer format moex TOM")
+		return 0.0, err
+	}
+
+	return responseT.Marketdata.Data[0][0].(float64), nil
 }

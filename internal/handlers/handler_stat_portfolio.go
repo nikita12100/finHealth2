@@ -3,7 +3,6 @@ package handlers
 import (
 	"fmt"
 	"log"
-	"strconv"
 	"test2/internal/common"
 	"test2/internal/db"
 	"test2/internal/models"
@@ -38,70 +37,33 @@ func HandleStatsPortfolioTable(c tele.Context) error {
 		log.Fatal(err)
 	}
 
-	topShareDivTable, divTable, sumTotalTable := printStatReport(&portfolio)
-
-	c.Send("Топ акций по дивидентам")
-	c.Send(topShareDivTable, tele.ModeMarkdown)
-
-	c.Send("Итого по дивидентам")
-	c.Send(divTable, tele.ModeMarkdown)
-
-	c.Send("[DEV] Итого сумма")
-	c.Send(sumTotalTable, tele.ModeMarkdown)
-
-	return c.Send("end table")
-}
-
-func printStatReport(p *models.Portfolio) (string, string, string) {
-	statsShare := stats.GetLastStatShare(p.Operations)
-	statsBond := stats.GetLastStatBond(p.Operations)
+	statsShare := stats.GetLastStatShare(portfolio.Operations)
+	statsBond := stats.GetLastStatBond(portfolio.Operations)
+	statsTOM := stats.GetLastStatTOM(portfolio.Operations)
 	statsShare = common.FilterValue(statsShare, func(stat models.StatsShare) bool {
 		return stat.Count != 0
 	})
 	statsBond = common.FilterValue(statsBond, func(stat models.StatsBond) bool {
 		return stat.Count != 0
 	})
+	statsTOM = common.FilterValue(statsTOM, func(stat models.StatsTOM) bool {
+		return stat.Count != 0
+	})
 
-	topShareDivTable := prepareTopShareDivTable(statsShare)
-	divTable := prepareDivTable(statsShare, statsBond)
-	sumTotalTable := prepareSumTotalTable(statsShare, statsBond)
+	sumTotalTable := prepareSumTotalTable(statsShare, statsBond, statsTOM)
 
-	return topShareDivTable, divTable, sumTotalTable
+	c.Send("Итого баланс")
+	c.Send(sumTotalTable, tele.ModeMarkdown)
+
+	return nil
 }
 
-func prepareTopShareDivTable(statsShare map[string]models.StatsShare) string {
-	topShareDivHeaders := []string{"№", "Ticker", "%", "sumDiv"}
-	var topShareDivRows [][]string
-	for i, kv := range common.SortValue(statsShare, func(i, j models.StatsShare) bool {
-		return i.DivPerc > j.DivPerc
-	}) {
-		row := []string{strconv.Itoa(i + 1), kv.Key, fmt.Sprintf("%.2f", kv.Value.DivPerc), fmt.Sprintf("%.0f", kv.Value.SumDiv)}
-		topShareDivRows = append(topShareDivRows, row)
-	}
-	return common.PrintTable4(topShareDivHeaders, topShareDivRows)
-}
-
-func prepareDivTable(statsShare map[string]models.StatsShare, statsBond map[string]models.StatsBond) string {
-	divHeaders := []string{"type", "month", "year"}
-	var divRows [][]string
-	divShareSum := 0.0
-	for _, stat := range statsShare {
-		divShareSum += stat.SumDiv
-	}
-	row := []string{"share", fmt.Sprintf("%.0f", (divShareSum / 12)), fmt.Sprintf("%.0f", divShareSum)}
-	divRows = append(divRows, row)
-	divBondSum := 0.0
-	for _, stat := range statsBond {
-		divBondSum += stat.Coup2025
-	}
-	row = []string{"bond", fmt.Sprintf("%.0f", (divBondSum / 12)), fmt.Sprintf("%.0f", divBondSum)}
-	divRows = append(divRows, row)
-	row = []string{"total", fmt.Sprintf("%.0f", ((divBondSum + divShareSum) / 12)), fmt.Sprintf("%.0f", divBondSum+divShareSum)}
-	divRows = append(divRows, row)
-	return common.PrintTable3(divHeaders, divRows)
-}
-
-func prepareSumTotalTable(statsShare map[string]models.StatsShare, statsBond map[string]models.StatsBond) string {
+// FIX _TOM+UDMN
+func prepareSumTotalTable(
+	statsShare map[string]models.StatsShare,
+	statsBond map[string]models.StatsBond,
+	statsTOM map[string]models.StatsTOM,
+) string {
 	sumTotalHeaders := []string{"type", "value"}
 	var sumTotalRows [][]string
 	shareSum := 0.0
@@ -117,9 +79,15 @@ func prepareSumTotalTable(statsShare map[string]models.StatsShare, statsBond map
 	row = []string{"bond", fmt.Sprintf("%.0f", bondSum)}
 	sumTotalRows = append(sumTotalRows, row)
 
-	row = []string{"Э_TOOOM", fmt.Sprintf("116000")}
+	TOMSum := 0.0
+	for ticker, stat := range statsTOM {
+		if ticker != "CNYRUB_TOM" { // FIXME покупка облиг за юани не уменьшает кол-во бумаг
+			TOMSum += stat.SumPriceTotal
+		}
+	}
+	row = []string{"gold", fmt.Sprintf("%.0f", TOMSum)}
 	sumTotalRows = append(sumTotalRows, row)
-	row = []string{"total", fmt.Sprintf("%.0f", shareSum+bondSum+116000+140000)}
+	row = []string{"total", fmt.Sprintf("%.0f", shareSum+bondSum+TOMSum+75000+55000)} // последние пополнение+UDMN
 	sumTotalRows = append(sumTotalRows, row)
 
 	return common.PrintTable2(sumTotalHeaders, sumTotalRows)

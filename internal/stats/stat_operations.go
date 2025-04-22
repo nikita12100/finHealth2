@@ -1,6 +1,7 @@
 package stats
 
 import (
+	"log"
 	"math"
 	"test2/internal/fetcher"
 	"test2/internal/models"
@@ -135,6 +136,40 @@ func GetLastStatBond(operations []models.Operation) map[string]models.StatsBond 
 		currStats.CouponPeriodPerYear = couponPeriodPerYear
 		currStats.SumPriceTotal = float64(currStats.Count) * bondInfo.LastPrice * bondInfo.FaceValue
 		currStats.Coup2025 = float64(currStats.Count) * currStats.CouponValue * float64(couponPeriodPerYear)
+
+		stats[ticker] = currStats
+	}
+
+	return stats
+}
+
+func GetLastStatTOM(operations []models.Operation) map[string]models.StatsTOM {
+	stats := make(map[string]models.StatsTOM)
+	for _, operation := range operations {
+		if models.IsCurrency(operation.Ticker) {
+			if _, exists := stats[operation.Ticker]; !exists {
+				stats[operation.Ticker] = models.StatsTOM{}
+			}
+
+			currStats := stats[operation.Ticker]
+			if operation.IsBuy {
+				currStats.Count += operation.Count
+				currStats.CountBuy += operation.Count
+				currStats.SumPriceBuy += operation.Price * float64(operation.Count)
+				currStats.AvgPriceBuy = math.Round((currStats.SumPriceBuy/float64(currStats.CountBuy))*100) / 100
+			} else {
+				currStats.Count -= operation.Count
+			}
+
+			stats[operation.Ticker] = currStats
+		}
+	}
+
+	for ticker, stat := range stats {
+		currStats := stat
+		currStats.LastPrice, _ = fetcher.GetLastPriceTOM(ticker)
+		log.Printf("wfref ticker=%v, LastPrice=%v", ticker, currStats.LastPrice)
+		currStats.SumPriceTotal = math.Round(currStats.LastPrice * float64(currStats.Count))
 
 		stats[ticker] = currStats
 	}

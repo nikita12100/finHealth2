@@ -37,8 +37,8 @@ func HandleStatsDivMain(c tele.Context) error {
 	c.Send(fmt.Sprintf("Сумма купонов:%v, див:%v. Всего:%v", sumCoup, sumDiv, sumCoup+sumDiv))
 
 	menu := &tele.ReplyMarkup{}
-	btnDivPerShare := menu.Data("выплаченно по акциям", "btnDivPerShare")                                  
-	btnDivPerShareCost := menu.Data("выплачено суммарно по акциям к стоимости акции", "btnDivPerShareCost")
+	btnDivPerShare := menu.Data("[todo]выплаченно по акциям", "btnDivPerShare")
+	btnDivPerShareCost := menu.Data("[todo]выплачено суммарно по акциям к стоимости акции", "btnDivPerShareCost")
 	btnDivFuture := menu.Data("будущие дивиденты", "btnDivFuture")
 	menu.Inline(
 		menu.Row(btnDivPerShare),
@@ -69,13 +69,32 @@ func HandleStatsDivFuture(c tele.Context) error {
 		return stat.Count != 0
 	})
 
-	photo, err := getPhoto("Див в след 12мес", "% к телу", 1, statsShare, plotters.AddHistogramSumDivFuture)
+	photo, err := getPhoto("Ожидаемые див в след 12мес", "% к средней цене покупки", 1, statsShare, plotters.AddHistogramSumDivFuture)
 	if err != nil {
 		return err
 	}
 	c.Send(photo, "Here's your photo!")
 
-	return c.Send("DivFuture")
+	c.Send("Итого по дивидентам в след 12мес.")
+	statsBond := stats.GetLastStatBond(portfolio.Operations)
+	statsBond = common.FilterValue(statsBond, func(stat models.StatsBond) bool {
+		return stat.Count != 0
+	})
+	divShareSum := 0.0
+	for _, stat := range statsShare {
+		divShareSum += stat.SumDiv
+	}
+	divBondSum := 0.0
+	for _, stat := range statsBond {
+		divBondSum += stat.Coup2025
+	}
+
+	report := fmt.Sprintf("Дивидентов: %.0f, в месяц: *%.0f*\n", divShareSum, (divShareSum/12)) +
+		fmt.Sprintf("Купонов: %.0f, в месяц: *%.0f*\n", divBondSum, (divBondSum/12)) +
+		fmt.Sprintf("Итого: %.0f, в месяц: *%.0f*\n", divBondSum+divShareSum, ((divBondSum+divShareSum)/12))
+	c.Send(report, tele.ModeMarkdown)
+
+	return nil
 }
 
 func HandleStatsReplenishmentMain(c tele.Context) error {
@@ -91,7 +110,7 @@ func HandleStatsReplenishmentMain(c tele.Context) error {
 	}
 	c.Send(photo, "Here's your photo!")
 
-	return c.Send("Replenishments")
+	return nil
 }
 
 func getPhoto[T any](

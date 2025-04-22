@@ -223,11 +223,22 @@ func AddHistogramSumDivFuture(stats map[string]models.StatsShare, plot *plot.Plo
 		return i.DivPerc > j.DivPerc
 	})
 
+	var labelsText []string
+	var labelsPos []plotter.XY
 	i := 0
 	for _, kv := range statsKV {
 		labels[i] = kv.Key
 		pts[i].X = float64(i)
 		pts[i].Y = kv.Value.DivPerc
+
+		rLabel := fmt.Sprintf("%.0f", kv.Value.SumDiv)
+		labelsText = append(labelsText, rLabel)
+
+		rxPos := pts[i].X - 0.2
+		ryPos := pts[i].Y + 0.3 // высота лейбла от столбца
+
+		rXY := plotter.XY{X: rxPos, Y: ryPos}
+		labelsPos = append(labelsPos, rXY)
 
 		i++
 	}
@@ -239,6 +250,21 @@ func AddHistogramSumDivFuture(stats map[string]models.StatsShare, plot *plot.Plo
 
 	plot.Add(hist)
 	plot.NominalX(labels...)
+
+	rl, err := plotter.NewLabels(plotter.XYLabels{
+		XYs:    labelsPos,
+		Labels: labelsText,
+	},
+	)
+	if err != nil {
+		log.Fatalf("could not creates labels plotter: %+v", err)
+	}
+	for i := range rl.TextStyle {
+		rl.TextStyle[i].Color = color.Black
+		rl.TextStyle[i].Font.Size = 12
+	}
+
+	plot.Add(rl)
 
 	return nil
 }
