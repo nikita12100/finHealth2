@@ -5,7 +5,7 @@ import (
 	"test2/internal/models"
 )
 
-func GetReplenishmentPerMonth(moneyOperations []models.MoneyOperation) []models.StatsMoneyOperationSnapshoot {
+func GetStatMoneyOperations(moneyOperations []models.MoneyOperation) []models.StatsMoneyOperationSnapshoot {
 	if len(moneyOperations) < 1 {
 		slog.Error("GetReplenishmentPerMonth len < 1")
 		return nil

@@ -214,3 +214,31 @@ func AddHistogramSumPriceTotal(stats map[string]models.StatsShare, plot *plot.Pl
 
 	return nil
 }
+
+func AddHistogramSumDivFuture(stats map[string]models.StatsShare, plot *plot.Plot) error {
+	pts := make(plotter.XYs, len(stats))
+	labels := make([]string, len(stats))
+
+	statsKV := common.SortValue(stats, func(i, j models.StatsShare) bool {
+		return i.DivPerc > j.DivPerc
+	})
+
+	i := 0
+	for _, kv := range statsKV {
+		labels[i] = kv.Key
+		pts[i].X = float64(i)
+		pts[i].Y = kv.Value.DivPerc
+
+		i++
+	}
+
+	hist, err := plotter.NewHistogram(pts, len(stats)*2)
+	if err != nil {
+		return err
+	}
+
+	plot.Add(hist)
+	plot.NominalX(labels...)
+
+	return nil
+}

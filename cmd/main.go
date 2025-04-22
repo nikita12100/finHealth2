@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	tokenName = "TG_TOKEN_FIN_HEALTH"
+	tokenName             = "TG_TOKEN_FIN_HEALTH"
 	btnPortfolioInfo1Text = "📊 распределение активов"
 	btnPortfolioInfo2Text = "💵 баланс"
 	btnPortfolioInfo3Text = "ℹ️ информация о портфеле"
@@ -61,10 +61,14 @@ func main() {
 	b.Handle(&tele.Btn{Text: btnPortfolioInfo2Text}, handlers.HandleStatsPortfolioTable)
 	b.Handle(&tele.Btn{Text: btnPortfolioInfo3Text}, handlers.HandleStatsPortfolioTable)
 
-	b.Handle(&tele.Btn{Text: btnPortfolioStat1Text}, handlers.HandleStatsPortfolioPlotReplenishment)
-	b.Handle(&tele.Btn{Text: btnPortfolioStat2Text}, handlers.HandleStatsPortfolioPlot)
+	b.Handle(&tele.Btn{Text: btnPortfolioStat1Text}, handlers.HandleStatsReplenishmentMain)
+	b.Handle(&tele.Btn{Text: btnPortfolioStat2Text}, handlers.HandleStatsDivMain)
 	b.Handle(&tele.Btn{Text: btnPortfolioStat3Text}, handlers.HandleUpdatePortfolio)
-	
+
+	b.Handle(&tele.Btn{Unique: "btnDivPerShare"}, handlers.HandleStatsDivPerShare)
+	b.Handle(&tele.Btn{Unique: "btnDivPerShareCost"}, handlers.HandleStatsDivPerShareCost)
+	b.Handle(&tele.Btn{Unique: "btnDivFuture"}, handlers.HandleStatsDivFuture)
+
 	b.Handle(tele.OnDocument, handlers.HandleBrockerReportFile)
 
 	b.Start()
