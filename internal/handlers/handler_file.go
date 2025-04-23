@@ -12,6 +12,7 @@ import (
 	"test2/internal/fetcher"
 	"test2/internal/models"
 	"test2/internal/parser"
+	"time"
 
 	"github.com/xuri/excelize/v2"
 	tele "gopkg.in/telebot.v4"
@@ -70,7 +71,7 @@ func HandleBrockerReportFile(c tele.Context) error {
 			resOperations = newOperations
 			resMoneyOperations = newMoneyOperations
 		} else {
-			slog.Error("Error getting portfolio", "error", err)
+			slog.Error("Error getting portfolio", "chatId", c.Chat().ID, "error", err)
 			return err
 		}
 	} else {
@@ -83,15 +84,32 @@ func HandleBrockerReportFile(c tele.Context) error {
 		Name:            "test",
 		Operations:      resOperations,
 		MoneyOperations: resMoneyOperations,
+		UpdatedAt:       time.Now(),
+		TimePeriod:      extendTimePeriod(optOldPortfolio.TimePeriod, newOperations[0].Date, newOperations[len(newOperations)-1].Date),
 	})
 	if err != nil {
-		slog.Error("Failed save portfolio", "error", err)
+		slog.Error("Failed save portfolio", "chatId", c.Chat().ID, "error", err)
 	}
-	slog.Info("Portfolio saved successfully")
+	slog.Info("Portfolio saved successfully", "chatId", c.Chat().ID)
 
 	c.Send("Отчет успешно загружен из файла и сохранен")
 
 	return c.Send(printDiffReport(newOperations), tele.ModeMarkdown)
+}
+
+func extendTimePeriod(old models.FromTo, newLeft time.Time, newRight time.Time) models.FromTo {
+	left := old.From
+	if old.From.IsZero() || newLeft.Before(old.From) {
+		left = newLeft
+	}
+	right := old.To
+	if old.To.IsZero() || newRight.After(old.To) {
+		right = newRight
+	}
+	return models.FromTo{
+		From: left,
+		To:   right,
+	}
 }
 
 func printDiffReport(operations []models.Operation) string {

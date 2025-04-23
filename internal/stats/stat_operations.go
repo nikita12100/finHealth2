@@ -1,7 +1,6 @@
 package stats
 
 import (
-	"log"
 	"math"
 	"test2/internal/fetcher"
 	"test2/internal/models"
@@ -9,7 +8,7 @@ import (
 )
 
 const (
-	USD_TO_RUB = 90
+	USD_TO_RUB = 85
 	CNY_TO_RUB = 11
 )
 
@@ -168,7 +167,6 @@ func GetLastStatTOM(operations []models.Operation) map[string]models.StatsTOM {
 	for ticker, stat := range stats {
 		currStats := stat
 		currStats.LastPrice, _ = fetcher.GetLastPriceTOM(ticker)
-		log.Printf("wfref ticker=%v, LastPrice=%v", ticker, currStats.LastPrice)
 		currStats.SumPriceTotal = math.Round(currStats.LastPrice * float64(currStats.Count))
 
 		stats[ticker] = currStats

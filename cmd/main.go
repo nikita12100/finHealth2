@@ -59,7 +59,7 @@ func main() {
 
 	b.Handle(&tele.Btn{Text: btnPortfolioInfo1Text}, handlers.HandleStatsPortfolioAllocations)
 	b.Handle(&tele.Btn{Text: btnPortfolioInfo2Text}, handlers.HandleStatsPortfolioTable)
-	b.Handle(&tele.Btn{Text: btnPortfolioInfo3Text}, handlers.HandleStatsPortfolioTable)
+	b.Handle(&tele.Btn{Text: btnPortfolioInfo3Text}, handlers.HandleInfoPortfolio)
 
 	b.Handle(&tele.Btn{Text: btnPortfolioStat1Text}, handlers.HandleStatsReplenishmentMain)
 	b.Handle(&tele.Btn{Text: btnPortfolioStat2Text}, handlers.HandleStatsDivMain)

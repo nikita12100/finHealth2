@@ -87,8 +87,21 @@ func prepareSumTotalTable(
 	}
 	row = []string{"gold", fmt.Sprintf("%.0f", TOMSum)}
 	sumTotalRows = append(sumTotalRows, row)
-	row = []string{"total", fmt.Sprintf("%.0f", shareSum+bondSum+TOMSum+75000+55000)} // последние пополнение+UDMN
+	row = []string{"total", fmt.Sprintf("%.0f", shareSum+bondSum+TOMSum+55000)} // +UDMN
 	sumTotalRows = append(sumTotalRows, row)
 
 	return common.PrintTable2(sumTotalHeaders, sumTotalRows)
+}
+
+func HandleInfoPortfolio(c tele.Context) error {
+	portfolio, err := db.GetPortfolio(c.Chat().ID, "test")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	report := fmt.Sprintf("Первая операция: %s\n", portfolio.TimePeriod.From.Format("2006-01-02")) +
+		fmt.Sprintf("Последняя операция: %s\n", portfolio.TimePeriod.To.Format("2006-01-02"))
+	c.Send(report)
+
+	return nil
 }

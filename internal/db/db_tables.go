@@ -24,6 +24,8 @@ func InitTables() {
 				name TEXT NOT NULL,
 				operations JSONB,
 				money_operations JSONB,
+				updated_at TEXT NOT NULL,
+				time_period TEXT,
 				PRIMARY KEY (chat_id, name)
 			)
 		`)
