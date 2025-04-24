@@ -4,46 +4,12 @@ import (
 	"math"
 	"test2/internal/fetcher"
 	"test2/internal/models"
-	"time"
 )
 
 const (
 	USD_TO_RUB = 85
 	CNY_TO_RUB = 11
 )
-
-type TimeValue struct {
-	Time  time.Time
-	Value float64
-}
-
-func GetCountPerTicker(operations []models.Operation) map[string]int {
-	countMap := make(map[string]int)
-	for _, operation := range operations {
-		if operation.IsBuy {
-			countMap[operation.Ticker] += operation.Count
-		} else {
-			countMap[operation.Ticker] -= operation.Count
-		}
-	}
-	return countMap
-}
-
-func GetAvgBuyPricePerTicker(operations []models.Operation) map[string]float64 {
-	sumPrice := make(map[string]float64)
-	avgCount := make(map[string]int)
-	for _, operation := range operations {
-		if operation.IsBuy {
-			sumPrice[operation.Ticker] += operation.Price * float64(operation.Count)
-			avgCount[operation.Ticker] += operation.Count
-		}
-	}
-	avgPrice := make(map[string]float64)
-	for ticker, sumPrice := range sumPrice {
-		avgPrice[ticker] = sumPrice / float64(avgCount[ticker])
-	}
-	return avgPrice
-}
 
 func GetLastStatShare(operations []models.Operation) map[string]models.StatsShare {
 	stats := make(map[string]models.StatsShare)
@@ -109,6 +75,7 @@ func GetLastStatBond(operations []models.Operation) map[string]models.StatsBond 
 	}
 
 	for ticker, stat := range stats {
+		// todo тут нужно не получать инфу по бумаге если она заэкспирировалась. сейчас цена 0 и поэтому они не учитываются в стате
 		currStats := stat
 		bondInfo, _ := fetcher.GetLastPriceBondCached(ticker)
 		currStats.CouponValue = bondInfo.CouponValue

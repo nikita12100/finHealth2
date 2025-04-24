@@ -3,7 +3,6 @@ package handlers
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"test2/internal/common"
 	"test2/internal/db"
 	"test2/internal/models"
@@ -15,10 +14,8 @@ import (
 )
 
 func HandleStatsDivMain(c tele.Context) error {
-	portfolio, err := db.GetPortfolio(c.Chat().ID, "test")
-	if err != nil {
-		log.Fatal(err)
-	}
+	portfolio := db.GetPortfolioOrCreate(c.Chat().ID)
+
 	statsPerMonth := stats.GetStatMoneyOperations(portfolio.MoneyOperations)
 
 	photo, err := getPhoto("Пассивный доход", "руб.", 1000, statsPerMonth, plotters.AddBarChartCoupAndDiv)
@@ -60,10 +57,7 @@ func HandleStatsDivPerShareCost(c tele.Context) error {
 
 // (две таблицы сюда поедут, вторая таблица как сообщение внизу)
 func HandleStatsDivFuture(c tele.Context) error {
-	portfolio, err := db.GetPortfolio(c.Chat().ID, "test")
-	if err != nil {
-		log.Fatal(err)
-	}
+	portfolio := db.GetPortfolioOrCreate(c.Chat().ID)
 	statsShare := stats.GetLastStatShare(portfolio.Operations)
 	statsShare = common.FilterValue(statsShare, func(stat models.StatsShare) bool {
 		return stat.Count != 0
@@ -98,10 +92,8 @@ func HandleStatsDivFuture(c tele.Context) error {
 }
 
 func HandleStatsReplenishmentMain(c tele.Context) error {
-	portfolio, err := db.GetPortfolio(c.Chat().ID, "test")
-	if err != nil {
-		log.Fatal(err)
-	}
+	portfolio := db.GetPortfolioOrCreate(c.Chat().ID)
+
 	statsPerMonth := stats.GetStatMoneyOperations(portfolio.MoneyOperations)
 
 	photo, err := getPhoto("Пополнения", "руб.", 50000, statsPerMonth, plotters.AddBarChart)

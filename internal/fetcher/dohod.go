@@ -41,7 +41,7 @@ func getDivYield(ticker string) (float64, error) {
 
 	matches := re.FindStringSubmatch(html)
 	if len(matches) < 2 {
-		slog.Error("Could not find dividend forecast in the page.", "ticker", ticker, "error", err)
+		slog.Warn("Could not find dividend", "ticker", ticker, "error", err)
 		return 0.0, err
 	}
 	rawNumber := matches[1]

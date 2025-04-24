@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -43,6 +41,7 @@ func fetchFileData(c tele.Context) ([]models.Operation, []models.MoneyOperation,
 	slog.Info("Got file", "name", file.FileName, "size(KB)", file.FileSize/1024)
 
 	if file.FileName[len(file.FileName)-5:] != ".xlsx" {
+		slog.Warn("wrong file format", "name", file.FileName)
 		return nil, nil, fmt.Errorf("неправильный тип файла, поддерживаемый тип .xlsx")
 	}
 
@@ -63,25 +62,27 @@ func HandleBrockerReportFile(c tele.Context) error {
 		c.Send(err)
 	}
 
-	var resOperations []models.Operation
-	var resMoneyOperations []models.MoneyOperation
-	optOldPortfolio, err := db.GetPortfolio(c.Chat().ID, "test")
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			resOperations = newOperations
-			resMoneyOperations = newMoneyOperations
-		} else {
-			slog.Error("Error getting portfolio", "chatId", c.Chat().ID, "error", err)
-			return err
-		}
-	} else {
-		resOperations = common.UnionOperation(optOldPortfolio.Operations, newOperations)
-		resMoneyOperations = common.UnionOperation(optOldPortfolio.MoneyOperations, newMoneyOperations)
-	}
+	// var resOperations []models.Operation
+	// var resMoneyOperations []models.MoneyOperation
+	optOldPortfolio := db.GetPortfolioOrCreate(c.Chat().ID)
+	resOperations := common.UnionOperation(optOldPortfolio.Operations, newOperations)
+	resMoneyOperations := common.UnionOperation(optOldPortfolio.MoneyOperations, newMoneyOperations)
+
+	// if err != nil {
+	// 	if errors.Is(err, sql.ErrNoRows) {
+	// 		resOperations = newOperations
+	// 		resMoneyOperations = newMoneyOperations
+	// 	} else {
+	// 		slog.Error("Error getting portfolio", "chatId", c.Chat().ID, "error", err)
+	// 		return err
+	// 	}
+	// } else {
+	// 	resOperations = common.UnionOperation(optOldPortfolio.Operations, newOperations)
+	// 	resMoneyOperations = common.UnionOperation(optOldPortfolio.MoneyOperations, newMoneyOperations)
+	// }
 
 	err = db.SavePortfolio(models.Portfolio{
 		ChatId:          c.Chat().ID,
-		Name:            "test",
 		Operations:      resOperations,
 		MoneyOperations: resMoneyOperations,
 		UpdatedAt:       time.Now(),
@@ -129,8 +130,10 @@ func printDiffReport(operations []models.Operation) string {
 	divSum := 0.0
 	for ticker, sumPrice := range sumPrice {
 		sum += sumPrice
-		div, _ := fetcher.GetDivYieldCached(ticker) // прогноз на след 12мес.
-		divSum += (div * float64(countPerTicker[ticker]) / 12.0)
+		if models.IsShare(ticker) {
+			div, _ := fetcher.GetDivYieldCached(ticker) // прогноз на след 12мес.
+			divSum += (div * float64(countPerTicker[ticker]) / 12.0)
+		}
 	}
 
 	report := "Отчет:\n"

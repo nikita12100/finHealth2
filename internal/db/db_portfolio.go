@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"sort"
 	"test2/internal/models"
@@ -39,20 +40,34 @@ func SavePortfolio(p models.Portfolio) error {
 	}
 
 	_, err = db.Exec(`
-		INSERT INTO portfolio (chat_id, name, operations, money_operations, updated_at, time_period)
-		VALUES (?, ?, ?, ?, ?, ?)
-		ON CONFLICT(chat_id, name) DO UPDATE SET
+		INSERT INTO portfolio (chat_id, operations, money_operations, updated_at, time_period)
+		VALUES (?, ?, ?, ?, ?)
+		ON CONFLICT(chat_id) DO UPDATE SET
 			operations = excluded.operations,
 			money_operations = excluded.money_operations,
 			updated_at = excluded.updated_at,
 			time_period = excluded.time_period
-	`, p.ChatId, p.Name, operationsJSON, moneyOperationsJSON, p.UpdatedAt.Format(time.RFC3339), timePeriod)
+	`, p.ChatId, operationsJSON, moneyOperationsJSON, p.UpdatedAt.Format(time.RFC3339), timePeriod)
 
 	return err
 }
 
-func GetPortfolio(chatId int64, name string) (models.Portfolio, error) {
-	slog.Info("GetPortfolio...", "chatId", chatId)
+func GetPortfolioOrCreate(chatId int64) models.Portfolio {
+	portfolio, err := getPortfolio(chatId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			slog.Warn("Not found portfolio, create new one", "chatId", chatId)
+			return models.Portfolio{}
+		} else {
+			slog.Error("Error while fetch portfolio, create new one", "chatId", chatId, "error", err)
+			return models.Portfolio{}
+		}
+	}
+	return portfolio
+}
+
+func getPortfolio(chatId int64) (models.Portfolio, error) {
+	slog.Info("Get portfolio ...", "chatId", chatId)
 	db, _ := sql.Open("sqlite3", dbPortfolio)
 
 	var p models.Portfolio
@@ -62,10 +77,10 @@ func GetPortfolio(chatId int64, name string) (models.Portfolio, error) {
 	var timePeriodJSON []byte
 
 	err := db.QueryRow(`
-		SELECT chat_id, name, operations, money_operations, updated_at, time_period
+		SELECT chat_id, operations, money_operations, updated_at, time_period
 		FROM portfolio
-		WHERE chat_id = ? AND name = ?
-	`, chatId, name).Scan(&p.ChatId, &p.Name, &operationsJSON, &moneyOperationsJSON, &updatedAtStr, &timePeriodJSON)
+		WHERE chat_id = ?
+	`, chatId).Scan(&p.ChatId, &operationsJSON, &moneyOperationsJSON, &updatedAtStr, &timePeriodJSON)
 	if err != nil {
 		return p, err
 	}

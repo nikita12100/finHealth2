@@ -20,9 +20,9 @@ func saveCacheDB[K any, CacheV any](key K, value CacheV, nameValueDB string) err
 	}
 
 	query := fmt.Sprintf(`
-		INSERT INTO cache (ticker, %s)
+		INSERT INTO cache (key_name, %s)
 		VALUES (?, ?)
-		ON CONFLICT(ticker) DO UPDATE SET
+		ON CONFLICT(key_name) DO UPDATE SET
 			%s = excluded.%s
 	`, nameValueDB, nameValueDB, nameValueDB)
 
@@ -55,7 +55,7 @@ func getCache[K any, CacheV any](ticker K, nameValueDB string) (CacheV, error) {
 	query := fmt.Sprintf(`
 		SELECT %s
 		FROM cache
-		WHERE ticker = ?
+		WHERE key_name = ?
 	`, nameValueDB)
 	err := db.QueryRow(query, ticker).Scan(&cacheJSON)
 	if err != nil {

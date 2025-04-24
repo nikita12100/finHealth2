@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"log"
 	"test2/internal/common"
 	"test2/internal/db"
 	"test2/internal/models"
@@ -13,10 +12,7 @@ import (
 )
 
 func HandleStatsPortfolioAllocations(c tele.Context) error {
-	portfolio, err := db.GetPortfolio(c.Chat().ID, "test")
-	if err != nil {
-		log.Fatal(err)
-	}
+	portfolio := db.GetPortfolioOrCreate(c.Chat().ID)
 
 	statsShare := stats.GetLastStatShare(portfolio.Operations)
 	statsShare = common.FilterValue(statsShare, func(stat models.StatsShare) bool {
@@ -32,10 +28,7 @@ func HandleStatsPortfolioAllocations(c tele.Context) error {
 }
 
 func HandleStatsPortfolioTable(c tele.Context) error {
-	portfolio, err := db.GetPortfolio(c.Chat().ID, "test")
-	if err != nil {
-		log.Fatal(err)
-	}
+	portfolio := db.GetPortfolioOrCreate(c.Chat().ID)
 
 	statsShare := stats.GetLastStatShare(portfolio.Operations)
 	statsBond := stats.GetLastStatBond(portfolio.Operations)
@@ -94,10 +87,7 @@ func prepareSumTotalTable(
 }
 
 func HandleInfoPortfolio(c tele.Context) error {
-	portfolio, err := db.GetPortfolio(c.Chat().ID, "test")
-	if err != nil {
-		log.Fatal(err)
-	}
+	portfolio := db.GetPortfolioOrCreate(c.Chat().ID)
 
 	report := fmt.Sprintf("Первая операция: %s\n", portfolio.TimePeriod.From.Format("2006-01-02")) +
 		fmt.Sprintf("Последняя операция: %s\n", portfolio.TimePeriod.To.Format("2006-01-02"))

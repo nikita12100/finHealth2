@@ -21,12 +21,11 @@ func InitTables() {
 	_, err = dbPortfolio.Exec(`
 			CREATE TABLE IF NOT EXISTS portfolio (
 				chat_id INTEGER NOT NULL,
-				name TEXT NOT NULL,
 				operations JSONB,
 				money_operations JSONB,
 				updated_at TEXT NOT NULL,
 				time_period TEXT,
-				PRIMARY KEY (chat_id, name)
+				PRIMARY KEY (chat_id)
 			)
 		`)
 	if err != nil {
@@ -40,12 +39,12 @@ func InitTables() {
 	defer dbCache.Close()
 	_, err = dbCache.Exec(`
 			CREATE TABLE IF NOT EXISTS cache (
-			    ticker TEXT,
+			    key_name TEXT,
 				dohod JSONB,
 				moex_isin JSONB,
 				moex_stock_bond JSONB,
 				moex_stock_share JSONB,
-				PRIMARY KEY (ticker)
+				PRIMARY KEY (key_name)
 			)
 		`)
 	if err != nil {
