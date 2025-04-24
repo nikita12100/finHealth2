@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"test2/internal/common"
 	"test2/internal/db"
 	"time"
 )
@@ -17,20 +18,7 @@ const (
 )
 
 func GetDivYieldCached(ticker string) (float64, error) {
-	if entry, err := db.GetCacheDohod(ticker); err == nil {
-		if time.Since(entry.Created) < ttlDohod {
-			return entry.Value, nil
-		}
-	}
-
-	value, _ := getDivYield(ticker)
-
-	db.SaveCacheDohod(ticker, db.CacheDohod{
-		Value:   value,
-		Created: time.Now(),
-	})
-
-	return value, nil
+	return common.Cached(ticker, ttlDohod, db.GetCacheDohod, getDivYield, db.SaveCacheDohod)
 }
 
 func getDivYield(ticker string) (float64, error) {
@@ -43,7 +31,7 @@ func getDivYield(ticker string) (float64, error) {
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		slog.Error("Error reading response body.", ticker, err)
+		slog.Error("Error reading response body.", "ticker", ticker, "error", err)
 		return 0.0, err
 	}
 
@@ -53,7 +41,7 @@ func getDivYield(ticker string) (float64, error) {
 
 	matches := re.FindStringSubmatch(html)
 	if len(matches) < 2 {
-		slog.Error("Could not find dividend forecast in the page.", ticker, err)
+		slog.Error("Could not find dividend forecast in the page.", "ticker", ticker, "error", err)
 		return 0.0, err
 	}
 	rawNumber := matches[1]
@@ -61,7 +49,7 @@ func getDivYield(ticker string) (float64, error) {
 
 	dividend, err := strconv.ParseFloat(cleanNumber, 64)
 	if err != nil {
-		slog.Error("Error converting dividend to float.", ticker, err)
+		slog.Error("Error converting dividend to float.", "ticker", ticker, "error", err)
 		return 0.0, err
 	}
 

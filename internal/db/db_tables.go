@@ -43,7 +43,8 @@ func InitTables() {
 			    ticker TEXT,
 				dohod JSONB,
 				moex_isin JSONB,
-				moex_stock JSONB,
+				moex_stock_bond JSONB,
+				moex_stock_share JSONB,
 				PRIMARY KEY (ticker)
 			)
 		`)

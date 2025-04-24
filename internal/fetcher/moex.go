@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"test2/internal/common"
 	"test2/internal/db"
 	"test2/internal/models"
 	"time"
@@ -17,20 +18,7 @@ const (
 )
 
 func GetTickerByISINCached(isin string) (string, error) {
-	if entry, err := db.GetCacheMoexIsin(isin); err == nil {
-		if time.Since(entry.Created) < ttlMOEX {
-			return entry.Value, nil
-		}
-	}
-
-	value, _ := getTickerByISIN(isin)
-
-	db.SaveCacheMoexIsin(isin, db.CacheMoexIsin{
-		Value:   value,
-		Created: time.Now(),
-	})
-
-	return value, nil
+	return common.Cached(isin, ttlMOEX, db.GetCacheMoexIsin, getTickerByISIN, db.SaveCacheMoexIsin)
 }
 
 func getTickerByISIN(isin string) (string, error) {
@@ -70,20 +58,7 @@ func removeFixPrefix(input string) string {
 }
 
 func GetLastPriceBondCached(ticker string) (models.StockBondInfo, error) {
-	if entry, err := db.GetCacheMoexStock(ticker); err == nil {
-		if time.Since(entry.Created) < ttlMOEXStock {
-			return entry.Value, nil
-		}
-	}
-
-	value, _ := getLastPriceBond(ticker)
-
-	db.SaveCacheMoexStock(ticker, db.CacheMoexStock{
-		Value:   value,
-		Created: time.Now(),
-	})
-
-	return value, nil
+	return common.Cached(ticker, ttlMOEXStock, db.GetCacheMoexStockBond, getLastPriceBond, db.SaveCacheMoexStockBond)
 }
 
 func getLastPriceBond(ticker string) (models.StockBondInfo, error) {
@@ -144,7 +119,11 @@ func getLastPriceBond(ticker string) (models.StockBondInfo, error) {
 	}, nil
 }
 
-func GetLastPriceShare(ticker string) (float64, error) {
+func GetLastPriceShareCached(ticker string) (float64, error) {
+	return common.Cached(ticker, ttlMOEXStock, db.GetCacheMoexStockShare, getLastPriceShare, db.SaveCacheMoexStockShare)
+}
+
+func getLastPriceShare(ticker string) (float64, error) {
 	resp, err := http.Get(fmt.Sprintf("https://iss.moex.com/iss/engines/stock/markets/shares/securities/%s.json?iss.meta=off&iss.only=marketdata&marketdata.columns=BOARDID,LAST", ticker))
 	if err != nil {
 		slog.Error("Got error while GET url", ticker, err)
@@ -166,7 +145,7 @@ func GetLastPriceShare(ticker string) (float64, error) {
 	}
 
 	if len(responseT.Marketdata.Data) == 0 {
-		slog.Error("wrong answer format moex Share", "ticker", ticker)
+		slog.Error("Empty marketdata for moex asnwer Share", "ticker", ticker)
 		return 0.0, err
 	}
 	var tqbrIndex int

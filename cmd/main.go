@@ -27,7 +27,7 @@ const (
 
 func initLogger() {
 	textHandler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug,
+		Level: slog.LevelInfo,
 		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
 			// Customize attribute display
 			if a.Key == slog.TimeKey {

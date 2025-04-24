@@ -3,98 +3,61 @@ package db
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
+	"test2/internal/common"
 	"test2/internal/models"
-	"time"
 )
 
-type CacheDohod struct {
-	Value   float64   `json:"value"`
-	Created time.Time `json:"created"`
-}
-
-type CacheMoexIsin struct {
-	Value   string    `json:"value"`
-	Created time.Time `json:"created"`
-}
-
-type CacheMoexStock struct {
-	Value   models.StockBondInfo `json:"value"`
-	Created time.Time            `json:"created"`
-}
-
-func SaveCacheDohod(ticker string, cache CacheDohod) error {
+func saveCacheDB[K any, CacheV any](key K, value CacheV, nameValueDB string) error {
 	db, err := sql.Open("sqlite3", dbCache)
 	if err != nil {
 		return err
 	}
 
-	cacheJSON, err := json.Marshal(cache)
+	cacheJSON, err := json.Marshal(value)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Exec(`
-		INSERT INTO cache (ticker, dohod)
+	query := fmt.Sprintf(`
+		INSERT INTO cache (ticker, %s)
 		VALUES (?, ?)
 		ON CONFLICT(ticker) DO UPDATE SET
-			dohod = excluded.dohod
-	`, ticker, cacheJSON)
+			%s = excluded.%s
+	`, nameValueDB, nameValueDB, nameValueDB)
+
+	_, err = db.Exec(query, key, cacheJSON)
 
 	return err
 }
 
-func SaveCacheMoexIsin(isin string, cache CacheMoexIsin) error {
-	db, err := sql.Open("sqlite3", dbCache)
-	if err != nil {
-		return err
-	}
-
-	cacheJSON, err := json.Marshal(cache)
-	if err != nil {
-		return err
-	}
-
-	_, err = db.Exec(`
-		INSERT INTO cache (ticker, moex_isin)
-		VALUES (?, ?)
-		ON CONFLICT(ticker) DO UPDATE SET
-			moex_isin = excluded.moex_isin
-	`, isin, cacheJSON)
-
-	return err
+func SaveCacheDohod(ticker string, cache common.Cache[float64]) error {
+	return saveCacheDB(ticker, cache, "dohod")
 }
 
-func SaveCacheMoexStock(ticker string, cache CacheMoexStock) error {
-	db, err := sql.Open("sqlite3", dbCache)
-	if err != nil {
-		return err
-	}
-
-	cacheJSON, err := json.Marshal(cache)
-	if err != nil {
-		return err
-	}
-
-	_, err = db.Exec(`
-		INSERT INTO cache (ticker, moex_stock)
-		VALUES (?, ?)
-		ON CONFLICT(ticker) DO UPDATE SET
-			moex_stock = excluded.moex_stock
-	`, ticker, cacheJSON)
-
-	return err
+func SaveCacheMoexIsin(isin string, cache common.Cache[string]) error {
+	return saveCacheDB(isin, cache, "moex_isin")
 }
 
-func GetCacheDohod(ticker string) (CacheDohod, error) {
+func SaveCacheMoexStockBond(ticker string, cache common.Cache[models.StockBondInfo]) error {
+	return saveCacheDB(ticker, cache, "moex_stock_bond")
+}
+
+func SaveCacheMoexStockShare(ticker string, cache common.Cache[float64]) error {
+	return saveCacheDB(ticker, cache, "moex_stock_share")
+}
+
+func getCache[K any, CacheV any](ticker K, nameValueDB string) (CacheV, error) {
 	db, _ := sql.Open("sqlite3", dbCache)
 
-	var cache CacheDohod
+	var cache CacheV
 	var cacheJSON []byte
-	err := db.QueryRow(`
-		SELECT dohod
+	query := fmt.Sprintf(`
+		SELECT %s
 		FROM cache
 		WHERE ticker = ?
-	`, ticker).Scan(&cacheJSON)
+	`, nameValueDB)
+	err := db.QueryRow(query, ticker).Scan(&cacheJSON)
 	if err != nil {
 		return cache, err
 	}
@@ -107,46 +70,18 @@ func GetCacheDohod(ticker string) (CacheDohod, error) {
 	return cache, nil
 }
 
-func GetCacheMoexIsin(isin string) (CacheMoexIsin, error) {
-	db, _ := sql.Open("sqlite3", dbCache)
-
-	var cache CacheMoexIsin
-	var cacheJSON []byte
-	err := db.QueryRow(`
-		SELECT moex_isin
-		FROM cache
-		WHERE ticker = ?
-	`, isin).Scan(&cacheJSON)
-	if err != nil {
-		return cache, err
-	}
-
-	err = json.Unmarshal(cacheJSON, &cache)
-	if err != nil {
-		return cache, err
-	}
-
-	return cache, nil
+func GetCacheDohod(ticker string) (common.Cache[float64], error) {
+	return getCache[string, common.Cache[float64]](ticker, "dohod")
 }
 
-func GetCacheMoexStock(ticker string) (CacheMoexStock, error) {
-	db, _ := sql.Open("sqlite3", dbCache)
+func GetCacheMoexIsin(isin string) (common.Cache[string], error) {
+	return getCache[string, common.Cache[string]](isin, "moex_isin")
+}
 
-	var cache CacheMoexStock
-	var cacheJSON []byte
-	err := db.QueryRow(`
-		SELECT moex_stock
-		FROM cache
-		WHERE ticker = ?
-	`, ticker).Scan(&cacheJSON)
-	if err != nil {
-		return cache, err
-	}
+func GetCacheMoexStockBond(ticker string) (common.Cache[models.StockBondInfo], error) {
+	return getCache[string, common.Cache[models.StockBondInfo]](ticker, "moex_stock_bond")
+}
 
-	err = json.Unmarshal(cacheJSON, &cache)
-	if err != nil {
-		return cache, err
-	}
-
-	return cache, nil
+func GetCacheMoexStockShare(ticker string) (common.Cache[float64], error) {
+	return getCache[string, common.Cache[float64]](ticker, "moex_stock_share")
 }

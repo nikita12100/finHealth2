@@ -69,7 +69,7 @@ func GetLastStatShare(operations []models.Operation) map[string]models.StatsShar
 
 	for ticker, stat := range stats {
 		currStats := stat
-		currStats.LastPrice, _ = fetcher.GetLastPriceShare(ticker)
+		currStats.LastPrice, _ = fetcher.GetLastPriceShareCached(ticker)
 		currStats.SumPriceTotal = math.Round(currStats.LastPrice * float64(currStats.Count))
 
 		currStats.Div, _ = fetcher.GetDivYieldCached(ticker)
