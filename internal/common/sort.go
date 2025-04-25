@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 )
 
@@ -89,4 +90,23 @@ func UnionOperation[T any](a, b []T) []T {
 	}
 
 	return result
+}
+
+func SlicesContainsAll[T comparable](haystack, needles []T) bool {
+	for _, v := range needles {
+		if !slices.Contains(haystack, v) {
+			return false
+		}
+	}
+	return true
+}
+
+func SlicesDifference[T comparable](old, new []T) []T {
+	var diff []T
+	for _, v := range new {
+		if !slices.Contains(old, v) {
+			diff = append(diff, v)
+		}
+	}
+	return diff
 }

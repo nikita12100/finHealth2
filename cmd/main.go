@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"log/slog"
 	"os"
@@ -29,15 +30,15 @@ func initLogger() {
 	textHandler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-			// Customize attribute display
 			if a.Key == slog.TimeKey {
-				return slog.Attr{} // Remove time for cleaner output
+				if t, ok := a.Value.Any().(time.Time); ok {
+                    return slog.String("time", t.Format("15:04:05"))
+                }
 			}
 			return a
 		},
 	})
 	slog.SetDefault(slog.New(textHandler))
-
 }
 
 func main() {
@@ -54,6 +55,8 @@ func main() {
 		log.Fatal(err)
 		return
 	}
+
+	b.Use(loggingMiddleware())
 
 	b.Handle("/start", handleStartMsg)
 
@@ -72,6 +75,23 @@ func main() {
 	b.Handle(tele.OnDocument, handlers.HandleBrockerReportFile)
 
 	b.Start()
+}
+
+func loggingMiddleware() tele.MiddlewareFunc {
+	return func(next tele.HandlerFunc) tele.HandlerFunc {
+		return func(c tele.Context) error {
+			attrs := []slog.Attr{
+				slog.Int64("chat_id", c.Chat().ID),
+				slog.String("username", c.Sender().Username),
+			}
+			
+			slog.LogAttrs(context.Background(), slog.LevelInfo, "processing client request",
+				attrs...,
+			)
+			
+			return next(c)
+		}
+	}
 }
 
 func handleStartMsg(c tele.Context) error {

@@ -19,6 +19,7 @@ const (
 	Dividends                          // 11
 	Withdraw                           // 12
 	Repo                               // 13
+	Redemption                         // 14
 )
 
 type MoneyOperation struct {

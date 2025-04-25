@@ -216,6 +216,8 @@ func parseMoneyOperationType(s string) OperationType {
 		return Withdraw
 	case "репо":
 		return Repo
+	case "частичное погашение облигации (амортизация номинала)":
+		return Redemption
 	default:
 		return Unknown
 	}
