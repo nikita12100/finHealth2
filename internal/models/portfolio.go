@@ -2,9 +2,9 @@ package models
 
 import "time"
 
-type FromTo struct {
-	From time.Time `json:"from"`
-	To   time.Time `json:"to"`
+type DateRange struct {
+	Start time.Time `json:"from"`
+	End   time.Time `json:"to"`
 }
 
 type Portfolio struct {
@@ -12,5 +12,20 @@ type Portfolio struct {
 	Operations      []Operation      `json:"operations"`
 	MoneyOperations []MoneyOperation `json:"money_operations"`
 	UpdatedAt       time.Time        `json:"updated_at"`
-	TimePeriod      FromTo           `json:"time_period"`
+	TimePeriod      DateRange        `json:"time_period"`
+}
+
+func (old DateRange) ExtendTimePeriod(new DateRange) DateRange {
+	left := old.Start
+	if old.Start.IsZero() || new.Start.Before(old.Start) {
+		left = new.Start
+	}
+	right := old.End
+	if old.End.IsZero() || new.End.After(old.End) {
+		right = new.End
+	}
+	return DateRange{
+		Start: left,
+		End:   right,
+	}
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"slices"
 	"strings"
 	"test2/internal/common"
 	"test2/internal/db"
@@ -124,6 +125,15 @@ func GetLastPriceShareCached(ticker string) (float64, error) {
 }
 
 func getLastPriceShare(ticker string) (float64, error) {
+	otcTickers := []string{"UDMN"}
+	if slices.Contains(otcTickers, ticker) {
+		return getLastPriceShareOTC(ticker)
+	} else {
+		return getLastPriceShareStock(ticker)
+	}
+}
+
+func getLastPriceShareStock(ticker string) (float64, error) {
 	resp, err := http.Get(fmt.Sprintf("https://iss.moex.com/iss/engines/stock/markets/shares/securities/%s.json?iss.meta=off&iss.only=marketdata&marketdata.columns=BOARDID,LAST", ticker))
 	if err != nil {
 		slog.Error("Got error while GET url", ticker, err)
@@ -161,6 +171,46 @@ func getLastPriceShare(ticker string) (float64, error) {
 		return 0.0, err
 	}
 	return responseT.Marketdata.Data[tqbrIndex][1].(float64), nil
+}
+
+func getLastPriceShareOTC(ticker string) (float64, error) {
+	resp, err := http.Get(fmt.Sprintf("https://iss.moex.com/iss/engines/otc/markets/shares/securities/%s.json?iss.meta=off&iss.only=securities&securities.columns=BOARDID,PREVPRICE", ticker))
+	if err != nil {
+		slog.Error("Got error while GET url", ticker, err)
+		return 0.0, err
+	}
+	defer resp.Body.Close()
+
+	type response struct {
+		Securities struct {
+			Columns []string        `json:"columns"`
+			Data    [][]interface{} `json:"data"`
+		} `json:"securities"`
+	}
+
+	var responseT response
+	if err := json.NewDecoder(resp.Body).Decode(&responseT); err != nil {
+		slog.Error("Failed parse to json answer", "ticker", ticker, "error", err)
+		return 0.0, err
+	}
+
+	if len(responseT.Securities.Data) == 0 {
+		slog.Error("Empty securities for otc moex asnwer Share", "ticker", ticker)
+		return 0.0, err
+	}
+	var mtqrIndex int
+	for i := range len(responseT.Securities.Data) {
+		if responseT.Securities.Data[i][0] == "MTQR" {
+			mtqrIndex = i
+			break
+		}
+	}
+
+	if len(responseT.Securities.Data[mtqrIndex]) == 0 {
+		slog.Error("wrong answer format2 moex Share", "ticker", ticker)
+		return 0.0, err
+	}
+	return responseT.Securities.Data[mtqrIndex][1].(float64), nil
 }
 
 func GetLastPriceTOM(ticker string) (float64, error) {

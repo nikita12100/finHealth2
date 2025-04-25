@@ -62,31 +62,21 @@ func HandleBrockerReportFile(c tele.Context) error {
 		c.Send(err)
 	}
 
-	// var resOperations []models.Operation
-	// var resMoneyOperations []models.MoneyOperation
 	optOldPortfolio := db.GetPortfolioOrCreate(c.Chat().ID)
 	resOperations := common.UnionOperation(optOldPortfolio.Operations, newOperations)
 	resMoneyOperations := common.UnionOperation(optOldPortfolio.MoneyOperations, newMoneyOperations)
 
-	// if err != nil {
-	// 	if errors.Is(err, sql.ErrNoRows) {
-	// 		resOperations = newOperations
-	// 		resMoneyOperations = newMoneyOperations
-	// 	} else {
-	// 		slog.Error("Error getting portfolio", "chatId", c.Chat().ID, "error", err)
-	// 		return err
-	// 	}
-	// } else {
-	// 	resOperations = common.UnionOperation(optOldPortfolio.Operations, newOperations)
-	// 	resMoneyOperations = common.UnionOperation(optOldPortfolio.MoneyOperations, newMoneyOperations)
-	// }
+	resTimePeriod := optOldPortfolio.TimePeriod.ExtendTimePeriod(models.DateRange{
+		Start: newOperations[0].Date,
+		End: newOperations[len(newOperations)-1].Date,
+	})
 
 	err = db.SavePortfolio(models.Portfolio{
 		ChatId:          c.Chat().ID,
 		Operations:      resOperations,
 		MoneyOperations: resMoneyOperations,
 		UpdatedAt:       time.Now(),
-		TimePeriod:      extendTimePeriod(optOldPortfolio.TimePeriod, newOperations[0].Date, newOperations[len(newOperations)-1].Date),
+		TimePeriod:      resTimePeriod,
 	})
 	if err != nil {
 		slog.Error("Failed save portfolio", "chatId", c.Chat().ID, "error", err)
@@ -96,21 +86,6 @@ func HandleBrockerReportFile(c tele.Context) error {
 	c.Send("Отчет успешно загружен из файла и сохранен")
 
 	return c.Send(printDiffReport(newOperations), tele.ModeMarkdown)
-}
-
-func extendTimePeriod(old models.FromTo, newLeft time.Time, newRight time.Time) models.FromTo {
-	left := old.From
-	if old.From.IsZero() || newLeft.Before(old.From) {
-		left = newLeft
-	}
-	right := old.To
-	if old.To.IsZero() || newRight.After(old.To) {
-		right = newRight
-	}
-	return models.FromTo{
-		From: left,
-		To:   right,
-	}
 }
 
 func printDiffReport(operations []models.Operation) string {

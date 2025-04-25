@@ -80,7 +80,7 @@ func prepareSumTotalTable(
 	}
 	row = []string{"gold", fmt.Sprintf("%.0f", TOMSum)}
 	sumTotalRows = append(sumTotalRows, row)
-	row = []string{"total", fmt.Sprintf("%.0f", shareSum+bondSum+TOMSum+55000)} // +UDMN
+	row = []string{"total", fmt.Sprintf("%.0f", shareSum+bondSum+TOMSum)}
 	sumTotalRows = append(sumTotalRows, row)
 
 	return common.PrintTable2(sumTotalHeaders, sumTotalRows)
@@ -89,8 +89,8 @@ func prepareSumTotalTable(
 func HandleInfoPortfolio(c tele.Context) error {
 	portfolio := db.GetPortfolioOrCreate(c.Chat().ID)
 
-	report := fmt.Sprintf("Первая операция: %s\n", portfolio.TimePeriod.From.Format("2006-01-02")) +
-		fmt.Sprintf("Последняя операция: %s\n", portfolio.TimePeriod.To.Format("2006-01-02"))
+	report := fmt.Sprintf("Первая операция: %s\n", portfolio.TimePeriod.Start.Format("2006-01-02")) +
+		fmt.Sprintf("Последняя операция: %s\n", portfolio.TimePeriod.End.Format("2006-01-02"))
 	c.Send(report)
 
 	return nil
