@@ -22,12 +22,18 @@ const (
 	Redemption                         // 14
 )
 
+type CommentMoneyOperation struct {
+	Ticker string `json:"ticker"`
+	Count  int    `json:"count"`
+}
+
 type MoneyOperation struct {
-	Time          time.Time     `json:"time"`
-	OperationType OperationType `json:"operation_type"`
-	AmountIn      float64       `json:"amount_in"`
-	AmountOut     float64       `json:"amount_out"`
-	Comment       string        `json:"comment"`
+	Time          time.Time             `json:"time"`
+	OperationType OperationType         `json:"operation_type"`
+	AmountIn      float64               `json:"amount_in"`
+	AmountOut     float64               `json:"amount_out"`
+	CommentRaw    string                `json:"comment_raw"`
+	Comment       CommentMoneyOperation `json:"comment"`
 }
 
 type StatsMoneyOperationSnapshoot struct {

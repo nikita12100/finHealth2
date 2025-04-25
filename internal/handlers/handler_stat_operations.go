@@ -34,7 +34,7 @@ func HandleStatsDivMain(c tele.Context) error {
 	c.Send(fmt.Sprintf("Сумма купонов:%v, див:%v. Всего:%v", sumCoup, sumDiv, sumCoup+sumDiv))
 
 	menu := &tele.ReplyMarkup{}
-	btnDivPerShare := menu.Data("[todo]выплаченно по акциям", "btnDivPerShare")
+	btnDivPerShare := menu.Data("выплаченно по акциям", "btnDivPerShare")
 	btnDivPerShareCost := menu.Data("[todo]выплачено суммарно по акциям к стоимости акции", "btnDivPerShareCost")
 	btnDivFuture := menu.Data("будущие дивиденты", "btnDivFuture")
 	menu.Inline(
@@ -47,16 +47,33 @@ func HandleStatsDivMain(c tele.Context) error {
 }
 
 func HandleStatsDivPerShare(c tele.Context) error {
-	return c.Send("todo HandleStatsDivPerShare")
+	c.RespondText("готовим графики")
+	c.Bot().Edit(c.Message(), "Дивиденты по акциям:", &tele.ReplyMarkup{})
+
+	portfolio := db.GetPortfolioOrCreate(c.Chat().ID)
+
+	statsDivPerTicker := stats.GetStatMoneyOperationsSumDivPerTicker(portfolio.MoneyOperations)
+
+	photo, err := getPhoto("Див по акциям", "руб.", 500, statsDivPerTicker, plotters.AddHistogramSumDivTotal)
+	if err != nil {
+		return err
+	}
+
+	return c.Send(photo, "Here's your photo!")
 }
 
 func HandleStatsDivPerShareCost(c tele.Context) error {
+	c.RespondText("готовим графики")
+	c.Bot().Edit(c.Message(), "Самооккупаемость акций:", &tele.ReplyMarkup{})
+
 	// окупаемость
 	return c.Send("todo HandleStatsDivPerShareCost")
 }
 
-// (две таблицы сюда поедут, вторая таблица как сообщение внизу)
 func HandleStatsDivFuture(c tele.Context) error {
+	c.RespondText("готовим графики")
+	c.Bot().Edit(c.Message(), "Будущие дивиднты:", &tele.ReplyMarkup{})
+
 	portfolio := db.GetPortfolioOrCreate(c.Chat().ID)
 	statsShare := stats.GetLastStatShare(portfolio.Operations)
 	statsShare = common.FilterValue(statsShare, func(stat models.StatsShare) bool {

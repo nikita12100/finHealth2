@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"log"
 	"regexp"
 	"strconv"
@@ -174,12 +175,16 @@ func fetchMoneyOperations(rows [][]string, positions BlockPos) []MoneyOperation 
 		moneyOperation.Time, _ = parseDate(rows[i][9])
 		moneyOperation.OperationType = parseMoneyOperationType(rows[i][14])
 		if moneyOperation.OperationType == Unknown {
-			slog.Warn("Unknown OperationType for", "str=", rows[i])
+			slog.Warn("Unknown OperationType for", "row", rows[i])
 		}
 		moneyOperation.AmountIn, _ = strconv.ParseFloat(rows[i][19], 64)
 		moneyOperation.AmountOut, _ = strconv.ParseFloat(rows[i][24], 64)
 		if len(rows[i]) == 28 {
-			moneyOperation.Comment = rows[i][27]
+			moneyOperation.CommentRaw = rows[i][27]
+
+			if moneyOperation.OperationType == Dividends {
+				moneyOperation.Comment = parseMoneyOperationComment(moneyOperation.CommentRaw)
+			}
 		}
 
 		moneyOperations = append(moneyOperations, moneyOperation)
@@ -221,4 +226,35 @@ func parseMoneyOperationType(s string) OperationType {
 	default:
 		return Unknown
 	}
+}
+
+func parseMoneyOperationComment(row string) CommentMoneyOperation {
+	isin, count, err := parseMoneyOperationCommentRow(row)
+	if err != nil {
+		return CommentMoneyOperation{}
+	}
+	ticker, err := fetcher.GetTickerByISINCached(isin)
+	if err != nil {
+		return CommentMoneyOperation{}
+	}
+
+	return CommentMoneyOperation{Ticker: ticker, Count: count}
+}
+
+func parseMoneyOperationCommentRow(row string) (isin string, count int, err error) {
+	re := regexp.MustCompile(`^([A-Z0-9]+)\/.*\/\s([0-9]+)\s*шт\.`)
+	matches := re.FindStringSubmatch(row)
+	if len(matches) < 3 {
+		slog.Warn("Failed to find matches for MoneyOperationComment", "row", row)
+		return "", 0, fmt.Errorf("invalid row format")
+	}
+
+	isin = strings.TrimSpace(matches[1])
+	count, err = strconv.Atoi(matches[2])
+	if err != nil {
+		slog.Warn("Failed to find parse count for MoneyOperationComment", "row", row)
+		return "", 0, fmt.Errorf("failed to parse count: %v", err)
+	}
+
+	return isin, count, nil
 }
