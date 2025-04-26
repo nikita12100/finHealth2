@@ -8,11 +8,14 @@ import (
 	"math"
 	"test2/internal/common"
 	"test2/internal/models"
+	"test2/internal/stats"
 
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
 	"gonum.org/v1/plot/text"
 	"gonum.org/v1/plot/vg"
+
+	tele "gopkg.in/telebot.v4"
 )
 
 type integerTicks struct{ Step int }
@@ -25,7 +28,7 @@ func (tic integerTicks) Ticks(min, max float64) []plot.Tick {
 	return t
 }
 
-func InitPlot(title string, yLabel string, ticks int) *plot.Plot {
+func initPlot(title string, yLabel string, ticks int) *plot.Plot {
 	p := plot.New()
 	p.Add(plotter.NewGrid())
 
@@ -53,7 +56,7 @@ func InitPlot(title string, yLabel string, ticks int) *plot.Plot {
 	return p
 }
 
-func RenderPlot(plot *plot.Plot) (*bytes.Buffer, error) {
+func renderPlot(plot *plot.Plot) (*bytes.Buffer, error) {
 	writer, err := plot.WriterTo(36*vg.Centimeter, 27*vg.Centimeter, "png")
 	if err != nil {
 		return nil, err
@@ -66,6 +69,27 @@ func RenderPlot(plot *plot.Plot) (*bytes.Buffer, error) {
 	}
 
 	return &buf, nil
+}
+
+func GetPlot[T any](
+	title string,
+	yLabel string,
+	ticks int,
+	data T,
+	addData func(T, *plot.Plot) error,
+) (*tele.Photo, error) {
+	plot := initPlot(title, yLabel, ticks)
+	err := addData(data, plot)
+	if err != nil {
+		return nil, err
+	}
+
+	plotBuffer, err := renderPlot(plot)
+	if err != nil {
+		return nil, err
+	}
+
+	return &tele.Photo{File: tele.FromReader(bytes.NewReader(plotBuffer.Bytes()))}, nil
 }
 
 func GetLine(data []models.StatsMoneyOperationSnapshoot) (*plotter.Line, error) {
@@ -164,8 +188,8 @@ func AddBarChartCoupAndDiv(stats []models.StatsMoneyOperationSnapshoot, plot *pl
 	barsDiv.Color = color.RGBA{R: 255, A: 255}
 
 	plot.Add(barsCoupon, barsDiv)
-	plot.Legend.Add("coupon", barsCoupon)
-	plot.Legend.Add("div", barsDiv)
+	plot.Legend.Add("купоны", barsCoupon)
+	plot.Legend.Add("дивиденты", barsDiv)
 
 	plot.NominalX(labels...)
 
@@ -277,6 +301,80 @@ func AddHistogramSumDivFuture(stats map[string]models.StatsShare, plot *plot.Plo
 	}
 
 	plot.Add(hist)
+	plot.NominalX(labels...)
+
+	rl, err := plotter.NewLabels(plotter.XYLabels{
+		XYs:    labelsPos,
+		Labels: labelsText,
+	},
+	)
+	if err != nil {
+		log.Fatalf("could not creates labels plotter: %+v", err)
+	}
+	for i := range rl.TextStyle {
+		rl.TextStyle[i].Color = color.Black
+		rl.TextStyle[i].Font.Size = 12
+	}
+
+	plot.Add(rl)
+
+	return nil
+}
+
+func AddHistogramSumPriceTotalWithDiv(p models.Portfolio, plot *plot.Plot) error {
+	statsDivPerTicker := stats.GetStatMoneyOperationsSumDivPerTicker(p.MoneyOperations)
+	stats := stats.GetLastStatShare(p.Operations)
+	stats = common.FilterValue(stats, func(stat models.StatsShare) bool {
+		return stat.Count != 0
+	})
+
+
+	ptsSum := make(plotter.Values, len(stats))
+	ptsDiv := make(plotter.Values, len(stats))
+	labels := make([]string, len(stats))
+
+	statsKV := common.SortValue(stats, func(i, j models.StatsShare) bool {
+		return i.SumPriceTotal > j.SumPriceTotal
+	})
+
+	var labelsText []string
+	var labelsPos []plotter.XY
+	i := 0
+	for _, kv := range statsKV {
+		labels[i] = kv.Key
+		// ptsSum[i].X = float64(i)
+		ptsSum[i] = kv.Value.SumPriceTotal - statsDivPerTicker[kv.Key]
+		ptsDiv[i] = statsDivPerTicker[kv.Key]
+
+		rLabel := fmt.Sprintf("%.1f%%", (statsDivPerTicker[kv.Key] / kv.Value.SumPriceTotal) * 100)
+		labelsText = append(labelsText, rLabel)
+
+		rxPos := float64(i) - 0.2
+		ryPos := ptsSum[i] + ptsDiv[i] + 10 // высота лейбла от столбца
+
+		rXY := plotter.XY{X: rxPos, Y: ryPos}
+		labelsPos = append(labelsPos, rXY)
+		i++
+	}
+
+	barsSum, err := plotter.NewBarChart(ptsSum, 1*vg.Centimeter)
+	if err != nil {
+		return err
+	}
+	barsDiv, err := plotter.NewBarChart(ptsDiv, 1*vg.Centimeter)
+	if err != nil {
+		return err
+	}
+
+	// barsDiv.StackOn(barsSum)
+	barsSum.StackOn(barsDiv)
+	barsSum.Color = color.RGBA{B: 255, A: 255}
+	barsDiv.Color = color.RGBA{R: 255, A: 255}
+
+	plot.Add(barsSum, barsDiv)
+	plot.Legend.Add("остальное", barsSum)
+	plot.Legend.Add("дивиденты", barsDiv)
+
 	plot.NominalX(labels...)
 
 	rl, err := plotter.NewLabels(plotter.XYLabels{

@@ -19,7 +19,7 @@ func HandleStatsPortfolioAllocations(c tele.Context) error {
 		return stat.Count != 0
 	})
 
-	photo, err := getPhoto("Распределение активов", "руб.", 10000, statsShare, plotters.AddHistogramSumPriceTotal)
+	photo, err := plotters.GetPlot("Распределение активов", "руб.", 10000, statsShare, plotters.AddHistogramSumPriceTotal)
 	if err != nil {
 		return err
 	}
@@ -45,7 +45,7 @@ func HandleStatsPortfolioTable(c tele.Context) error {
 
 	sumTotalTable := prepareSumTotalTable(statsShare, statsBond, statsTOM)
 
-	c.Send("Итого баланс")
+	c.Send("Стоимость портфеля")
 	c.Send(sumTotalTable, tele.ModeMarkdown)
 
 	return nil

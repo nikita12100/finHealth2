@@ -134,7 +134,7 @@ func getLastPriceShare(ticker string) (float64, error) {
 }
 
 func getLastPriceShareStock(ticker string) (float64, error) {
-	resp, err := http.Get(fmt.Sprintf("https://iss.moex.com/iss/engines/stock/markets/shares/securities/%s.json?iss.meta=off&iss.only=marketdata&marketdata.columns=BOARDID,LAST", ticker))
+	resp, err := http.Get(fmt.Sprintf("https://iss.moex.com/iss/engines/stock/markets/shares/securities/%s.json?iss.meta=off&iss.only=securities,marketdata&marketdata.columns=BOARDID,LAST&securities.columns=BOARDID,PREVPRICE", ticker))
 	if err != nil {
 		slog.Error("Got error while GET url", ticker, err)
 		return 0.0, err
@@ -142,6 +142,10 @@ func getLastPriceShareStock(ticker string) (float64, error) {
 	defer resp.Body.Close()
 
 	type response struct {
+		Securities struct {
+			Columns []string        `json:"columns"`
+			Data    [][]interface{} `json:"data"`
+		} `json:"securities"`
 		Marketdata struct {
 			Columns []string        `json:"columns"`
 			Data    [][]interface{} `json:"data"`
@@ -170,7 +174,12 @@ func getLastPriceShareStock(ticker string) (float64, error) {
 		slog.Error("wrong answer format2 moex Share", "ticker", ticker)
 		return 0.0, err
 	}
-	return responseT.Marketdata.Data[tqbrIndex][1].(float64), nil
+
+	if responseT.Marketdata.Data[tqbrIndex][1] == nil { // use securities
+		return responseT.Securities.Data[tqbrIndex][1].(float64), nil
+	} else {
+		return responseT.Marketdata.Data[tqbrIndex][1].(float64), nil
+	}
 }
 
 func getLastPriceShareOTC(ticker string) (float64, error) {
