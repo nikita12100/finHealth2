@@ -55,14 +55,14 @@ func initPlot(title string, yLabel string, ticks int) *plot.Plot {
 func renderPlot(plot *plot.Plot) *bytes.Buffer {
 	writer, err := plot.WriterTo(36*vg.Centimeter, 27*vg.Centimeter, "png")
 	if err != nil {
-		slog.Error("Error while rendering plot")
+		slog.Error("Error while rendering plot", "error", err)
 		return nil
 	}
 
 	var buf bytes.Buffer
 	_, err = writer.WriteTo(&buf)
 	if err != nil {
-		slog.Error("Error while saving rendered plot")
+		slog.Error("Error while saving rendered plot", "error", err)
 		return nil
 	}
 
@@ -79,7 +79,7 @@ func GetPlot[T any](
 	plot := initPlot(title, yLabel, ticks)
 	err := addData(data, plot)
 	if err != nil {
-		slog.Error("Error while adding data on plot", "title", title)
+		slog.Error("Error while adding data on plot", "error", err, "title", title)
 		return nil
 	}
 

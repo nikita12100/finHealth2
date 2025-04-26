@@ -32,8 +32,8 @@ func initLogger() {
 		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
 			if a.Key == slog.TimeKey {
 				if t, ok := a.Value.Any().(time.Time); ok {
-                    return slog.String("time", t.Format("15:04:05"))
-                }
+					return slog.String("time", t.Format("15:04:05"))
+				}
 			}
 			return a
 		},
@@ -84,11 +84,11 @@ func loggingMiddleware() tele.MiddlewareFunc {
 				slog.Int64("chat_id", c.Chat().ID),
 				slog.String("username", c.Sender().Username),
 			}
-			
+
 			slog.LogAttrs(context.Background(), slog.LevelInfo, "processing client request",
 				attrs...,
 			)
-			
+
 			return next(c)
 		}
 	}

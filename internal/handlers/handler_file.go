@@ -95,7 +95,6 @@ func printDiffReport(oldOperations []models.Operation, newOperations []models.Op
 	}
 	diffOperations := common.SlicesDifference(oldOperations, newOperations)
 
-
 	statsShare := stats.GetLastStatShare(diffOperations)
 	statsShare = common.FilterValue(statsShare, func(stat models.StatsShare) bool {
 		return stat.Count != 0

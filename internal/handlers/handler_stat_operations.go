@@ -16,7 +16,7 @@ func HandleStatsDivMain(c tele.Context) error {
 
 	statsPerMonth := stats.GetStatMoneyOperations(portfolio.MoneyOperations)
 
-	photo := plotters.GetPlot("Пассивный доход", "руб.", 1000, statsPerMonth, plotters.AddBarChartCoupAndDiv)
+	photo := plotters.GetPlot("Пассивный доход", "руб.", 1000, statsPerMonth, plotters.AddCoupAndDivChart)
 	c.Send("полученные див,купоны по месяцам")
 	c.Send(photo, "Here's your photo!")
 	sumDiv := 0
@@ -48,7 +48,7 @@ func HandleStatsDivPerShare(c tele.Context) error {
 	portfolio := db.GetPortfolioOrCreate(c.Chat().ID)
 	statsDivPerTicker := stats.GetStatMoneyOperationsSumDivPerTicker(portfolio.MoneyOperations)
 
-	photo := plotters.GetPlot("Див по акциям", "руб.", 500, statsDivPerTicker, plotters.AddHistogramSumDivTotal)
+	photo := plotters.GetPlot("Див по акциям", "руб.", 500, statsDivPerTicker, plotters.AddSumDivTotalChart)
 
 	return c.Send(photo, "Here's your photo!")
 }
@@ -64,7 +64,7 @@ func HandleStatsDivPerShareCost(c tele.Context) error {
 	// 	return stat.Count != 0
 	// })
 
-	photo := plotters.GetPlot("Самооккупаемость акций", "руб.", 10000, portfolio, plotters.AddHistogramSumPriceTotalWithDiv)
+	photo := plotters.GetPlot("Самооккупаемость акций", "руб.", 10000, portfolio, plotters.AddSumPriceTotalWithDivChart)
 
 	return c.Send(photo, "Here's your photo!")
 }
@@ -79,7 +79,7 @@ func HandleStatsDivFuture(c tele.Context) error {
 		return stat.Count != 0
 	})
 
-	photo := plotters.GetPlot("Ожидаемые див в след 12мес", "% к средней цене покупки", 1, statsShare, plotters.AddHistogramSumDivFuture)
+	photo := plotters.GetPlot("Ожидаемые див в след 12мес", "% к средней цене покупки", 1, statsShare, plotters.AddSumDivFutureChart)
 
 	c.Send(photo, "Here's your photo!")
 
@@ -110,7 +110,7 @@ func HandleStatsReplenishmentMain(c tele.Context) error {
 
 	statsPerMonth := stats.GetStatMoneyOperations(portfolio.MoneyOperations)
 
-	photo := plotters.GetPlot("Пополнения", "руб.", 50000, statsPerMonth, plotters.AddBarChart)
+	photo := plotters.GetPlot("Пополнения", "руб.", 50000, statsPerMonth, plotters.AddReplenishmentChart)
 	c.Send(photo, "Here's your photo!")
 
 	return nil
