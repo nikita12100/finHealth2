@@ -58,11 +58,6 @@ func HandleStatsDivPerShareCost(c tele.Context) error {
 	c.Bot().Edit(c.Message(), "Самооккупаемость акций:", &tele.ReplyMarkup{})
 
 	portfolio := db.GetPortfolioOrCreate(c.Chat().ID)
-	// statsDivPerTicker := stats.GetStatMoneyOperationsSumDivPerTicker(portfolio.MoneyOperations)
-	// statsShare := stats.GetLastStatShare(portfolio.Operations)
-	// statsShare = common.FilterValue(statsShare, func(stat models.StatsShare) bool {
-	// 	return stat.Count != 0
-	// })
 
 	photo := plotters.GetPlot("Самооккупаемость акций", "руб.", 10000, portfolio, plotters.AddSumPriceTotalWithDivChart)
 
