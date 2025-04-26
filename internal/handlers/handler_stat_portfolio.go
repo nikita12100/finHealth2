@@ -19,10 +19,7 @@ func HandleStatsPortfolioAllocations(c tele.Context) error {
 		return stat.Count != 0
 	})
 
-	photo, err := plotters.GetPlot("Распределение активов", "руб.", 10000, statsShare, plotters.AddHistogramSumPriceTotal)
-	if err != nil {
-		return err
-	}
+	photo := plotters.GetPlot("Распределение активов", "руб.", 10000, statsShare, plotters.AddHistogramSumPriceTotal)
 
 	return c.Send(photo, "Here's your photo!")
 }

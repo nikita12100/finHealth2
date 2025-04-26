@@ -1,110 +1,18 @@
 package plotters
 
 import (
-	"bytes"
 	"fmt"
 	"image/color"
 	"log"
-	"math"
 	"test2/internal/common"
 	"test2/internal/models"
 	"test2/internal/stats"
 
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
-	"gonum.org/v1/plot/text"
 	"gonum.org/v1/plot/vg"
-
-	tele "gopkg.in/telebot.v4"
 )
 
-type integerTicks struct{ Step int }
-
-func (tic integerTicks) Ticks(min, max float64) []plot.Tick {
-	var t []plot.Tick
-	for i := math.Trunc(min); i <= max; i += float64(tic.Step) {
-		t = append(t, plot.Tick{Value: i, Label: fmt.Sprint(i)})
-	}
-	return t
-}
-
-func initPlot(title string, yLabel string, ticks int) *plot.Plot {
-	p := plot.New()
-	p.Add(plotter.NewGrid())
-
-	p.Title.Text = title
-	p.Title.TextStyle.Font.Size = 16
-	p.Title.Padding = vg.Length(10) // Space above title
-
-	p.X.Padding = vg.Length(5) // Space below X axis
-	p.X.Tick.Label.Rotation = math.Pi / 4
-	p.X.Tick.Label.XAlign = text.XRight // Align to right of tick
-	p.X.Tick.Label.YAlign = text.YTop   // Align above tick
-
-	// p.X.Tick.Marker = plot.TimeTicks{Format: "2006-01-02"}
-
-	p.Y.Label.Text = yLabel
-	p.Y.Tick.Marker = integerTicks{Step: ticks}
-
-	p.Legend.Top = true              // Place at top
-	p.Legend.Left = true             // Not on left side
-	p.Legend.XOffs = 0               // Horizontal offset
-	p.Legend.YOffs = -50             // Vertical offset
-	p.Legend.Padding = vg.Length(10) // Space around legend
-	p.Legend.TextStyle.Font.Size = 14
-
-	return p
-}
-
-func renderPlot(plot *plot.Plot) (*bytes.Buffer, error) {
-	writer, err := plot.WriterTo(36*vg.Centimeter, 27*vg.Centimeter, "png")
-	if err != nil {
-		return nil, err
-	}
-
-	var buf bytes.Buffer
-	_, err = writer.WriteTo(&buf)
-	if err != nil {
-		return nil, err
-	}
-
-	return &buf, nil
-}
-
-func GetPlot[T any](
-	title string,
-	yLabel string,
-	ticks int,
-	data T,
-	addData func(T, *plot.Plot) error,
-) (*tele.Photo, error) {
-	plot := initPlot(title, yLabel, ticks)
-	err := addData(data, plot)
-	if err != nil {
-		return nil, err
-	}
-
-	plotBuffer, err := renderPlot(plot)
-	if err != nil {
-		return nil, err
-	}
-
-	return &tele.Photo{File: tele.FromReader(bytes.NewReader(plotBuffer.Bytes()))}, nil
-}
-
-func GetLine(data []models.StatsMoneyOperationSnapshoot) (*plotter.Line, error) {
-	pts := make(plotter.XYs, len(data))
-	for i, d := range data {
-		pts[i].X = float64(d.Time.Unix()) // Convert time to float
-		pts[i].Y = d.Replenishment
-		// pts[i].Y = d.Coupon + d.Dividends
-	}
-
-	line, _ := plotter.NewLine(pts)
-	line.Color = color.RGBA{R: 255, A: 255}
-
-	return line, nil
-}
 
 func AddBarChart(stats []models.StatsMoneyOperationSnapshoot, plot *plot.Plot) error {
 	pts := make(plotter.Values, len(stats))

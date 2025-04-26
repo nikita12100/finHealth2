@@ -16,10 +16,7 @@ func HandleStatsDivMain(c tele.Context) error {
 
 	statsPerMonth := stats.GetStatMoneyOperations(portfolio.MoneyOperations)
 
-	photo, err := plotters.GetPlot("Пассивный доход", "руб.", 1000, statsPerMonth, plotters.AddBarChartCoupAndDiv)
-	if err != nil {
-		return err
-	}
+	photo := plotters.GetPlot("Пассивный доход", "руб.", 1000, statsPerMonth, plotters.AddBarChartCoupAndDiv)
 	c.Send("полученные див,купоны по месяцам")
 	c.Send(photo, "Here's your photo!")
 	sumDiv := 0
@@ -51,10 +48,7 @@ func HandleStatsDivPerShare(c tele.Context) error {
 	portfolio := db.GetPortfolioOrCreate(c.Chat().ID)
 	statsDivPerTicker := stats.GetStatMoneyOperationsSumDivPerTicker(portfolio.MoneyOperations)
 
-	photo, err := plotters.GetPlot("Див по акциям", "руб.", 500, statsDivPerTicker, plotters.AddHistogramSumDivTotal)
-	if err != nil {
-		return err
-	}
+	photo := plotters.GetPlot("Див по акциям", "руб.", 500, statsDivPerTicker, plotters.AddHistogramSumDivTotal)
 
 	return c.Send(photo, "Here's your photo!")
 }
@@ -70,10 +64,7 @@ func HandleStatsDivPerShareCost(c tele.Context) error {
 	// 	return stat.Count != 0
 	// })
 
-	photo, err := plotters.GetPlot("Самооккупаемость акций", "руб.", 10000, portfolio, plotters.AddHistogramSumPriceTotalWithDiv)
-	if err != nil {
-		return err
-	}
+	photo := plotters.GetPlot("Самооккупаемость акций", "руб.", 10000, portfolio, plotters.AddHistogramSumPriceTotalWithDiv)
 
 	return c.Send(photo, "Here's your photo!")
 }
@@ -88,10 +79,8 @@ func HandleStatsDivFuture(c tele.Context) error {
 		return stat.Count != 0
 	})
 
-	photo, err := plotters.GetPlot("Ожидаемые див в след 12мес", "% к средней цене покупки", 1, statsShare, plotters.AddHistogramSumDivFuture)
-	if err != nil {
-		return err
-	}
+	photo := plotters.GetPlot("Ожидаемые див в след 12мес", "% к средней цене покупки", 1, statsShare, plotters.AddHistogramSumDivFuture)
+
 	c.Send(photo, "Here's your photo!")
 
 	c.Send("Итого по дивидентам в след 12мес.")
@@ -121,10 +110,7 @@ func HandleStatsReplenishmentMain(c tele.Context) error {
 
 	statsPerMonth := stats.GetStatMoneyOperations(portfolio.MoneyOperations)
 
-	photo, err := plotters.GetPlot("Пополнения", "руб.", 50000, statsPerMonth, plotters.AddBarChart)
-	if err != nil {
-		return err
-	}
+	photo := plotters.GetPlot("Пополнения", "руб.", 50000, statsPerMonth, plotters.AddBarChart)
 	c.Send(photo, "Here's your photo!")
 
 	return nil
