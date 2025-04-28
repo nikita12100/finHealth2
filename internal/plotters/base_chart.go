@@ -9,7 +9,7 @@ import (
 	"gonum.org/v1/plot/vg"
 )
 
-type ColumnsData struct {
+type ColumnsData1 struct {
 	XYs            []plotter.XY  // координаты
 	XYs2           []plotter.XY  // координаты 2 (сверху)
 	Legend         []string      // легенда
@@ -20,7 +20,7 @@ type ColumnsData struct {
 	BarWidth       vg.Length     // ширина столбика
 }
 
-func addBarChart(data ColumnsData, plot *plot.Plot) error {
+func addBarChart(data ColumnsData1, plot *plot.Plot) error {
 	values := make(plotter.Values, len(data.XYs))
 	for i, currDataXY := range data.XYs {
 		values[i] = currDataXY.Y
@@ -88,7 +88,7 @@ func addBarChart(data ColumnsData, plot *plot.Plot) error {
 	return nil
 }
 
-func addHistogramChart(data ColumnsData, plot *plot.Plot) error {
+func addHistogramChart(data ColumnsData1, plot *plot.Plot) error {
 	var xys plotter.XYs
 	xys = data.XYs
 	bars, err := plotter.NewHistogram(xys, len(data.XYs)*2)

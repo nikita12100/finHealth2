@@ -56,6 +56,14 @@ func main() {
 		return
 	}
 
+	b.Handle("/mini_app", func(c tele.Context) error {
+		menu := &tele.ReplyMarkup{}
+		btn := menu.WebApp("Open Mini App", &tele.WebApp{URL: "https://sedbrkuebrhfeyrbg.serveo.net/"})
+		menu.Inline(menu.Row(btn))
+
+		return c.Send("Welcome to my bot! Try our Mini App:", menu)
+	})
+
 	b.Use(loggingMiddleware())
 
 	b.Handle("/start", handleStartMsg)

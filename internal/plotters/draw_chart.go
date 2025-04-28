@@ -32,7 +32,7 @@ func AddReplenishmentChart(stats []models.StatsMoneyOperationSnapshoot, plot *pl
 		}
 	}
 
-	data := ColumnsData{
+	data := ColumnsData1{
 		XYs:            xys,
 		Labels:         labels,
 		ColumnLabels:   columnLabels,
@@ -71,7 +71,7 @@ func AddCoupAndDivChart(stats []models.StatsMoneyOperationSnapshoot, plot *plot.
 		}
 	}
 
-	data := ColumnsData{
+	data := ColumnsData1{
 		XYs:            xys,
 		XYs2:           xys2,
 		Legend:         []string{"купоны", "дивиденты"},
@@ -124,7 +124,7 @@ func AddSumPriceTotalWithDivChart(p models.Portfolio, plot *plot.Plot) error {
 		i++
 	}
 
-	data := ColumnsData{
+	data := ColumnsData1{
 		XYs:            xys,
 		XYs2:           xys2,
 		Legend:         []string{"дивиденты", "остальное"},
@@ -160,7 +160,7 @@ func AddSumPriceTotalChart(stats map[string]models.StatsShare, plot *plot.Plot) 
 		i++
 	}
 
-	data := ColumnsData{
+	data := ColumnsData1{
 		XYs:    xys,
 		Labels: labels,
 	}
@@ -190,7 +190,7 @@ func AddSumDivTotalChart(stats map[string]float64, plot *plot.Plot) error {
 		i++
 	}
 
-	data := ColumnsData{
+	data := ColumnsData1{
 		XYs:    xys,
 		Labels: labels,
 	}
@@ -227,7 +227,7 @@ func AddSumDivFutureChart(stats map[string]models.StatsShare, plot *plot.Plot) e
 		i++
 	}
 
-	data := ColumnsData{
+	data := ColumnsData1{
 		XYs:            xys,
 		Labels:         labels,
 		ColumnLabels:   columnLabels,
