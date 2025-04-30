@@ -1,10 +1,10 @@
 package echart
 
 import (
-	"bytes"
 	"log/slog"
 
 	"github.com/go-echarts/go-echarts/v2/charts"
+	"github.com/go-echarts/go-echarts/v2/components"
 	"github.com/go-echarts/go-echarts/v2/opts"
 )
 
@@ -83,7 +83,7 @@ func setGlobalOptions(bar *charts.Bar, options ChartOptions) {
 	}
 }
 
-func getChart(data ColumnsData, options ChartOptions) *bytes.Buffer {
+func getChart(data ColumnsData, options ChartOptions) *components.Page {
 	if isCorrect := validateData(data); !isCorrect {
 		return nil
 	}
@@ -104,11 +104,8 @@ func getChart(data ColumnsData, options ChartOptions) *bytes.Buffer {
 			}))
 	}
 
-	var buf bytes.Buffer
-	if err := bar.Render(&buf); err != nil {
-		slog.Error("error while render chart", "error", err)
-		return nil
-	}
+	page := components.NewPage()
+	page.AddCharts(bar)
 
-	return &buf
+	return page
 }

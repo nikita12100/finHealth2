@@ -1,15 +1,15 @@
 package echart
 
 import (
-	"bytes"
 	"test2/internal/common"
 	"test2/internal/models"
 	"test2/internal/stats"
 
+	"github.com/go-echarts/go-echarts/v2/components"
 	"github.com/go-echarts/go-echarts/v2/opts"
 )
 
-func AddReplenishmentChart(stats []models.StatsMoneyOperationSnapshoot) *bytes.Buffer {
+func AddReplenishmentChart(stats []models.StatsMoneyOperationSnapshoot) *components.Page {
 	values := make([]opts.BarData, len(stats))
 	labels := make([]string, len(stats))
 
@@ -33,7 +33,7 @@ func AddReplenishmentChart(stats []models.StatsMoneyOperationSnapshoot) *bytes.B
 	return getChart(data, options)
 }
 
-func AddCoupAndDivChart(stats []models.StatsMoneyOperationSnapshoot) *bytes.Buffer {
+func AddCoupAndDivChart(stats []models.StatsMoneyOperationSnapshoot) *components.Page {
 	values := make([]opts.BarData, len(stats))
 	values2 := make([]opts.BarData, len(stats))
 	labels := make([]string, len(stats))
@@ -60,7 +60,7 @@ func AddCoupAndDivChart(stats []models.StatsMoneyOperationSnapshoot) *bytes.Buff
 	return getChart(data, options)
 }
 
-func AddSumPriceTotalChart(stats map[string]models.StatsShare) *bytes.Buffer {
+func AddSumPriceTotalChart(stats map[string]models.StatsShare) *components.Page {
 	values := make([]opts.BarData, len(stats))
 	labels := make([]string, len(stats))
 
@@ -89,7 +89,7 @@ func AddSumPriceTotalChart(stats map[string]models.StatsShare) *bytes.Buffer {
 	return getChart(data, options)
 }
 
-func AddSumDivTotalChart(stats map[string]float64) *bytes.Buffer {
+func AddSumDivTotalChart(stats map[string]float64) *components.Page {
 	values := make([]opts.BarData, len(stats))
 	labels := make([]string, len(stats))
 
@@ -118,7 +118,7 @@ func AddSumDivTotalChart(stats map[string]float64) *bytes.Buffer {
 	return getChart(data, options)
 }
 
-func AddSumPriceTotalWithDivChart(p models.Portfolio) *bytes.Buffer {
+func AddSumPriceTotalWithDivChart(p models.Portfolio) *components.Page {
 	statsDivPerTicker := stats.GetStatMoneyOperationsSumDivPerTicker(p.MoneyOperations)
 	stats := stats.GetLastStatShare(p.Operations)
 	stats = common.FilterValue(stats, func(stat models.StatsShare) bool {
@@ -156,7 +156,7 @@ func AddSumPriceTotalWithDivChart(p models.Portfolio) *bytes.Buffer {
 	return getChart(data, options)
 }
 
-func AddSumDivFutureChart(stats map[string]models.StatsShare) *bytes.Buffer {
+func AddSumDivFutureChart(stats map[string]models.StatsShare) *components.Page {
 	values := make([]opts.BarData, len(stats))
 	labels := make([]string, len(stats))
 
