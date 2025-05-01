@@ -49,7 +49,6 @@ require (
 	golang.org/x/net v0.37.0 // indirect
 	golang.org/x/oauth2 v0.28.0
 	golang.org/x/text v0.23.0 // indirect
-	gonum.org/v1/plot v0.16.0
 	google.golang.org/api v0.228.0
 	gopkg.in/telebot.v4 v4.0.0-beta.4
 )

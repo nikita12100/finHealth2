@@ -40,7 +40,7 @@ func GetStatMoneyOperations(moneyOperations []models.MoneyOperation) []models.St
 	return stats
 }
 
-func GetStatMoneyOperationsSumDivPerTicker(moneyOperations []models.MoneyOperation) map[string]float64 {
+func GetStatSumDivPerShare(moneyOperations []models.MoneyOperation) map[string]float64 {
 	stats := make(map[string]float64)
 	for _, operation := range moneyOperations {
 		if operation.OperationType == models.Dividends {

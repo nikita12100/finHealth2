@@ -5,24 +5,10 @@ import (
 	"test2/internal/common"
 	"test2/internal/db"
 	"test2/internal/models"
-	"test2/internal/plotters"
 	"test2/internal/stats"
 
 	tele "gopkg.in/telebot.v4"
 )
-
-func HandleStatsPortfolioAllocations(c tele.Context) error {
-	portfolio := db.GetPortfolioOrCreate(c.Chat().ID)
-
-	statsShare := stats.GetLastStatShare(portfolio.Operations)
-	statsShare = common.FilterValue(statsShare, func(stat models.StatsShare) bool {
-		return stat.Count != 0
-	})
-
-	photo := plotters.GetPlot("Распределение активов", "руб.", 10000, statsShare, plotters.AddSumPriceTotalChart)
-
-	return c.Send(photo, "Here's your photo!")
-}
 
 func HandleStatsPortfolioTable(c tele.Context) error {
 	portfolio := db.GetPortfolioOrCreate(c.Chat().ID)

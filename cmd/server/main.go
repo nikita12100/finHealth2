@@ -32,12 +32,12 @@ func main() {
 	slog.Info("Starting portfolio server...")
 
 	http.HandleFunc("/", mainPageHandler)
-	http.HandleFunc("/grafik1", endpoints.Grafik1Handler)
-	http.HandleFunc("/grafik2", endpoints.Grafik2Handler)
-	http.HandleFunc("/grafik3", endpoints.Grafik3Handler)
-	http.HandleFunc("/grafik4", endpoints.Grafik4Handler)
-	http.HandleFunc("/grafik5", endpoints.Grafik5Handler)
-	http.HandleFunc("/grafik6", endpoints.Grafik6Handler)
+	http.HandleFunc("/grafik1", endpoints.HandleStatsReplenishment)
+	http.HandleFunc("/grafik2", endpoints.HandleStatsAllocations)
+	http.HandleFunc("/grafik3", endpoints.HandleStatsDiv)
+	http.HandleFunc("/grafik4", endpoints.HandleStatsDivPerShare)
+	http.HandleFunc("/grafik5", endpoints.HandleStatsDivPerShareCost)
+	http.HandleFunc("/grafik6", endpoints.HandleStatsDivFuture)
 
 	log.Println("Starting server on http://localhost:8085 ...")
 	log.Fatal(http.ListenAndServe(":8085", nil))

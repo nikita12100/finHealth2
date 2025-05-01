@@ -1,10 +1,9 @@
-package echart
+package plotters
 
 import (
 	"log/slog"
 
 	"github.com/go-echarts/go-echarts/v2/charts"
-	"github.com/go-echarts/go-echarts/v2/components"
 	"github.com/go-echarts/go-echarts/v2/opts"
 )
 
@@ -83,7 +82,7 @@ func setGlobalOptions(bar *charts.Bar, options ChartOptions) {
 	}
 }
 
-func getChart(data ColumnsData, options ChartOptions) *components.Page {
+func getBar(data ColumnsData, options ChartOptions) *charts.Bar {
 	if isCorrect := validateData(data); !isCorrect {
 		return nil
 	}
@@ -104,8 +103,5 @@ func getChart(data ColumnsData, options ChartOptions) *components.Page {
 			}))
 	}
 
-	page := components.NewPage()
-	page.AddCharts(bar)
-
-	return page
+	return bar
 }
