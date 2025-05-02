@@ -243,7 +243,7 @@ func GetLastPriceTOM(ticker string) (float64, error) {
 		return 0.0, err
 	}
 
-	if len(responseT.Marketdata.Data) == 0 || len(responseT.Marketdata.Data[0]) == 0 {
+	if len(responseT.Marketdata.Data) == 0 || len(responseT.Marketdata.Data[0]) == 0 || responseT.Marketdata.Data[0][0] == nil {
 		slog.Error("wrong answer format moex TOM")
 		return 0.0, err
 	}

@@ -1,8 +1,6 @@
 package main
 
 import (
-	"context"
-	"log"
 	"log/slog"
 	"os"
 	"test2/internal/db"
@@ -10,17 +8,19 @@ import (
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
+	// _ "modernc.org/sqlite"
 	tele "gopkg.in/telebot.v4"
 )
 
 const (
-	tokenName             = "TG_TOKEN_FIN_HEALTH"
+	botTokenEnvName  = "TG_TOKEN_FIN_HEALTH"
+	serverURLEnvName = "BACKEND_URL_FIN_HEALTH"
+	serverURLDefault = "https://sedbrkuebrhfeyrbg.serveo.net/"
+
+	btnMiniAppText        = "Mini App"
 	btnPortfolioInfo2Text = "💵 баланс"
 	btnPortfolioInfo3Text = "ℹ️ информация о портфеле"
-
-	btnPortfolioStat3Text = "[DEV] ???"
-
-	btnHelpText = "❓ Помощь"
+	btnHelpText           = "❓ Помощь"
 )
 
 func initLogger() {
@@ -44,66 +44,42 @@ func main() {
 	db.InitTables()
 
 	pref := tele.Settings{
-		Token:  os.Getenv(tokenName),
+		Token:  os.Getenv(botTokenEnvName),
 		Poller: &tele.LongPoller{Timeout: 10 * time.Second},
 	}
 	b, err := tele.NewBot(pref)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Error starting bot", "error", err)
 		return
 	}
-
-	b.Handle("/mini_app", func(c tele.Context) error {
-		menu := &tele.ReplyMarkup{}
-		btn := menu.WebApp("Open Mini App", &tele.WebApp{URL: "https://sedbrkuebrhfeyrbg.serveo.net/"})
-		menu.Inline(menu.Row(btn))
-
-		return c.Send("Welcome to my bot! Try our Mini App:", menu)
-	})
-
-	b.Use(loggingMiddleware())
 
 	b.Handle("/start", handleStartMsg)
 
 	b.Handle(&tele.Btn{Text: btnPortfolioInfo2Text}, handlers.HandleStatsPortfolioTable)
 	b.Handle(&tele.Btn{Text: btnPortfolioInfo3Text}, handlers.HandleInfoPortfolio)
 
-	b.Handle(&tele.Btn{Text: btnPortfolioStat3Text}, handlers.HandleUpdatePortfolio)
-
 	b.Handle(tele.OnDocument, handlers.HandleBrockerReportFile)
 
 	b.Start()
 }
 
-func loggingMiddleware() tele.MiddlewareFunc {
-	return func(next tele.HandlerFunc) tele.HandlerFunc {
-		return func(c tele.Context) error {
-			attrs := []slog.Attr{
-				slog.Int64("chat_id", c.Chat().ID),
-				slog.String("username", c.Sender().Username),
-			}
-
-			slog.LogAttrs(context.Background(), slog.LevelInfo, "processing client request",
-				attrs...,
-			)
-
-			return next(c)
-		}
-	}
-}
-
 func handleStartMsg(c tele.Context) error {
 	menu := &tele.ReplyMarkup{ResizeKeyboard: true}
 
+	serverURL := os.Getenv(serverURLEnvName)
+	if serverURL == "" {
+		serverURL = serverURLDefault
+	}
+
+	btnMiniApp := menu.WebApp("Mini App", &tele.WebApp{URL: serverURL})
 	btnPortfolioInfo2 := menu.Text(btnPortfolioInfo2Text)
 	btnPortfolioInfo3 := menu.Text(btnPortfolioInfo3Text)
 
-	btnPortfolioStat3 := menu.Text(btnPortfolioStat3Text)
 	btnHelp := menu.Text(btnHelpText)
 
 	menu.Reply(
-		menu.Row(btnPortfolioInfo2),
-		menu.Row(btnPortfolioInfo3, btnPortfolioStat3),
+		menu.Row(btnMiniApp),
+		menu.Row(btnPortfolioInfo2, btnPortfolioInfo3),
 		menu.Row(btnHelp),
 	)
 

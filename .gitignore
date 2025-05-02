@@ -6,7 +6,10 @@
 
 *.test
 
+build/
+output/
 *.out
+*_app
 
 go.work
 go.work.sum

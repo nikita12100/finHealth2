@@ -1,4 +1,4 @@
-package endpoints
+package routes
 
 import (
 	"bytes"
@@ -67,6 +67,8 @@ func insertData(tmp *template.Template, chart *charts.Bar) *bytes.Buffer {
 }
 
 func HandleStatsReplenishment(w http.ResponseWriter, r *http.Request) {
+	slog.Info("Handle /stat/replenishment")
+
 	portfolio := db.GetPortfolioOrCreate(507097513)
 	statsPerMonth := stats.GetStatMoneyOperations(portfolio.MoneyOperations)
 
@@ -79,6 +81,8 @@ func HandleStatsReplenishment(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleStatsAllocations(w http.ResponseWriter, r *http.Request) {
+	slog.Info("Handle /stat/allocations")
+
 	portfolio := db.GetPortfolioOrCreate(507097513)
 
 	statsShare := stats.GetLastStatShare(portfolio.Operations)
@@ -95,6 +99,8 @@ func HandleStatsAllocations(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleStatsDiv(w http.ResponseWriter, r *http.Request) {
+	slog.Info("Handle /stat/div")
+
 	portfolio := db.GetPortfolioOrCreate(507097513)
 	statsPerMonth := stats.GetStatMoneyOperations(portfolio.MoneyOperations)
 
@@ -116,6 +122,8 @@ func HandleStatsDiv(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleStatsDivPerShare(w http.ResponseWriter, r *http.Request) {
+	slog.Info("Handle /stat/div_per_share")
+
 	portfolio := db.GetPortfolioOrCreate(507097513)
 	statsDivPerTicker := stats.GetStatSumDivPerShare(portfolio.MoneyOperations)
 
@@ -128,6 +136,8 @@ func HandleStatsDivPerShare(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleStatsDivPerShareCost(w http.ResponseWriter, r *http.Request) {
+	slog.Info("Handle /stat/div_per_share_cost")
+	
 	portfolio := db.GetPortfolioOrCreate(507097513)
 
 	chart := plotters.AddSumPriceTotalWithDivChart(portfolio) // todo send stat
@@ -139,6 +149,8 @@ func HandleStatsDivPerShareCost(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleStatsDivFuture(w http.ResponseWriter, r *http.Request) {
+	slog.Info("Handle /stat/div_future")
+	
 	portfolio := db.GetPortfolioOrCreate(507097513)
 	statsShare := stats.GetLastStatShare(portfolio.Operations)
 	statsShare = common.FilterValue(statsShare, func(stat models.StatsShare) bool {
