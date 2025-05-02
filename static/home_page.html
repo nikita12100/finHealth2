@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Графики</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #121212;
+            color: #ffe853;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #1e1e1e;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            padding: 40px;
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: #ffe853;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        ul li {
+            margin-bottom: 20px;
+        }
+
+        ul li a {
+            display: inline-block;
+            padding: 15px 25px;
+            background-color: #ffe853;
+            color: #121212;
+            font-size: 1.2rem;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: background-color 0.3s ease;
+        }
+
+        ul li a:hover {
+            background-color: #817528;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            ul li a {
+                font-size: 1rem;
+                padding: 12px 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Выберите график</h1>
+        <ul>
+            <li><a href="/stat/replenishment">пополнения</a></li>
+            <li><a href="/stat/allocations">распределение активов</a></li>
+            <li><a href="/stat/div">див+купоны</a></li>
+            <li><a href="/stat/div_per_share">выплачено по акциям</a></li>
+            <li><a href="/stat/div_per_share_cost">самоокупаемость акций</a></li>
+            <li><a href="/stat/div_future">будущие дивиденты</a></li>
+        </ul>
+    </div>
+</body>
+
+</html>

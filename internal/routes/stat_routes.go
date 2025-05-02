@@ -14,40 +14,7 @@ import (
 	"github.com/go-echarts/go-echarts/v2/charts"
 )
 
-func getTemplate() *template.Template {
-	tmpl := `
-	<!DOCTYPE html>
-	<html>
-	<head>
-		<meta charset="UTF-8">
-		<title>Biba name</title>
-		<script src="https://go-echarts.github.io/go-echarts-assets/assets/echarts.min.js"></script>
-	</head>
-	<body>
-		<header>
-			<h1><a href="/" style="text-decoration: none; color: inherit;">🏠 Home</a></h1>
-		</header>
-		<main>
-			{{.Element}} {{.Script}}
-			<style>
-				.container {margin-top:30px; display: flex;justify-content: center;align-items: center;}
-				.item {margin: auto;}
-			</style>
-		</main>
-	</body>
-	</html>
-	`
-	t := template.New("snippet")
-	t, err := t.Parse(tmpl)
-	if err != nil {
-		slog.Error("Error parsing html template", "html", tmpl, "error", err)
-		return nil
-	}
-
-	return t
-}
-
-func insertData(tmp *template.Template, chart *charts.Bar) *bytes.Buffer {
+func insertDataChart(tmp *template.Template, chart *charts.Bar) *bytes.Buffer {
 	chartSnippet := chart.RenderSnippet()
 	data := struct {
 		Element template.HTML
@@ -60,7 +27,7 @@ func insertData(tmp *template.Template, chart *charts.Bar) *bytes.Buffer {
 	var buf bytes.Buffer
 	err := tmp.Execute(&buf, data)
 	if err != nil {
-		slog.Error("Error inserting data into HTML template", "error", err)
+		slog.Error("Error inserting chart data into HTML template", "error", err)
 		return nil
 	}
 	return &buf
@@ -74,8 +41,8 @@ func HandleStatsReplenishment(w http.ResponseWriter, r *http.Request) {
 
 	chart := plotters.AddReplenishmentChart(statsPerMonth)
 	
-	tmplPage := getTemplate()
-	page := insertData(tmplPage, chart)
+	tmplPage := getTemplate("./static/stat_page.html")
+	page := insertDataChart(tmplPage, chart)
 
 	w.Write(page.Bytes())
 }
@@ -92,8 +59,8 @@ func HandleStatsAllocations(w http.ResponseWriter, r *http.Request) {
 
 	chart := plotters.AddAllocationsChart(statsShare)
 
-	tmplPage := getTemplate()
-	page := insertData(tmplPage, chart)
+	tmplPage := getTemplate("./static/stat_page.html")
+	page := insertDataChart(tmplPage, chart)
 
 	w.Write(page.Bytes())
 }
@@ -105,9 +72,9 @@ func HandleStatsDiv(w http.ResponseWriter, r *http.Request) {
 	statsPerMonth := stats.GetStatMoneyOperations(portfolio.MoneyOperations)
 
 	chart := plotters.AddDivChart(statsPerMonth)
-	
-	tmplPage := getTemplate()
-	page := insertData(tmplPage, chart)
+
+	tmplPage := getTemplate("./static/stat_page.html")
+	page := insertDataChart(tmplPage, chart)
 
 	w.Write(page.Bytes())
 
@@ -128,9 +95,9 @@ func HandleStatsDivPerShare(w http.ResponseWriter, r *http.Request) {
 	statsDivPerTicker := stats.GetStatSumDivPerShare(portfolio.MoneyOperations)
 
 	chart := plotters.AddSumDivPerShareChart(statsDivPerTicker)
-	
-	tmplPage := getTemplate()
-	page := insertData(tmplPage, chart)
+
+	tmplPage := getTemplate("./static/stat_page.html")
+	page := insertDataChart(tmplPage, chart)
 
 	w.Write(page.Bytes())
 }
@@ -141,9 +108,9 @@ func HandleStatsDivPerShareCost(w http.ResponseWriter, r *http.Request) {
 	portfolio := db.GetPortfolioOrCreate(507097513)
 
 	chart := plotters.AddSumPriceTotalWithDivChart(portfolio) // todo send stat
-	
-	tmplPage := getTemplate()
-	page := insertData(tmplPage, chart)
+
+	tmplPage := getTemplate("./static/stat_page.html")
+	page := insertDataChart(tmplPage, chart)
 
 	w.Write(page.Bytes())
 }
@@ -158,9 +125,9 @@ func HandleStatsDivFuture(w http.ResponseWriter, r *http.Request) {
 	})
 
 	chart := plotters.AddDivFutureChart(statsShare)
-	
-	tmplPage := getTemplate()
-	page := insertData(tmplPage, chart)
+
+	tmplPage := getTemplate("./static/stat_page.html")
+	page := insertDataChart(tmplPage, chart)
 
 	w.Write(page.Bytes())
 
