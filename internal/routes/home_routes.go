@@ -28,6 +28,6 @@ func HomePageHandler(w http.ResponseWriter, r *http.Request) {
 	slog.Info("Handle /")
 
 	tmp := getTemplate("./static/home_page.html")
-	
+
 	tmp.Execute(w, nil)
 }

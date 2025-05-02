@@ -34,9 +34,6 @@ func main() {
 	http.HandleFunc("/stat/replenishment", routes.HandleStatsReplenishment)
 	http.HandleFunc("/stat/allocations", routes.HandleStatsAllocations)
 	http.HandleFunc("/stat/div", routes.HandleStatsDiv)
-	http.HandleFunc("/stat/div_per_share", routes.HandleStatsDivPerShare)
-	http.HandleFunc("/stat/div_per_share_cost", routes.HandleStatsDivPerShareCost)
-	http.HandleFunc("/stat/div_future", routes.HandleStatsDivFuture)
 
 	slog.Info("Starting server on http://localhost:8085 ...")
 	err := http.ListenAndServe(":8085", nil)

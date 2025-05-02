@@ -118,7 +118,7 @@ func AddSumDivPerShareChart(stats map[string]float64) *charts.Bar {
 	return getBar(data, options)
 }
 
-func AddSumPriceTotalWithDivChart(p models.Portfolio) *charts.Bar {
+func AddPriceToDivChart(p models.Portfolio) *charts.Bar {
 	statsDivPerTicker := stats.GetStatSumDivPerShare(p.MoneyOperations)
 	stats := stats.GetLastStatShare(p.Operations)
 	stats = common.FilterValue(stats, func(stat models.StatsShare) bool {
